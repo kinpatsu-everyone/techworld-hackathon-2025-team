@@ -1,0 +1,50 @@
+project_id = "your-gcp-project-id"
+region     = "asia-northeast1"
+
+service_name = "backend-api"
+image        = "asia-northeast1-docker.pkg.dev/your-project/backend/api:latest"
+domain       = "api.example.com"
+
+# Cloudflare Origin CA (create at Cloudflare Dashboard > SSL/TLS > Origin Server)
+# cloudflare_origin_ca_cert = <<EOF
+# -----BEGIN CERTIFICATE-----
+# ...
+# -----END CERTIFICATE-----
+# EOF
+
+# cloudflare_origin_ca_key = <<EOF
+# -----BEGIN PRIVATE KEY-----
+# ...
+# -----END PRIVATE KEY-----
+# EOF
+
+env_vars = {
+  ENV           = "production"
+  PORT          = "8080"
+  MYSQL_HOST    = "your-cloud-sql-ip"
+  MYSQL_PORT    = "3306"
+  MYSQL_DATABASE = "backend_db"
+  REDIS_ADDR    = "your-redis-ip:6379"
+}
+
+# Reference secrets from Secret Manager
+secrets = {
+  MYSQL_USER = {
+    secret_id = "mysql-user"
+    version   = "latest"
+  }
+  MYSQL_PASSWORD = {
+    secret_id = "mysql-password"
+    version   = "latest"
+  }
+  REDIS_PASSWORD = {
+    secret_id = "redis-password"
+    version   = "latest"
+  }
+}
+
+min_instances = 0
+max_instances = 10
+cpu           = "1"
+memory        = "512Mi"
+concurrency   = 80

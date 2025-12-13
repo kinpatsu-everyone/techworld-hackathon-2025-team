@@ -1,19 +1,72 @@
-import { StyleSheet, Text, View, Animated } from 'react-native';
-import { useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, Animated, TouchableWithoutFeedback } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { TrushRegisterLink } from './components/TrushRegisterLink';
+import { TrashModal } from './components/TrashModal';
+import { FilterButton } from './components/FilterButton';
+import { FilterMenu, TrashType } from './components/FilterMenu';
+import { TrashPlot } from '@/components/trash-plot';
+import { TrashBin } from '@/types/model';
+
+// カテゴリ番号からTrashTypeへのマッピング
+// 1:燃えるゴミ, 2:不燃ごみ, 3:缶・瓶, 4:ペットボトル, 5:紙
+const categoryToTrashType = (category: number): TrashType => {
+  switch (category) {
+    case 1:
+      return 'burnable';
+    case 2:
+      return 'non-burnable';
+    case 3:
+      return 'cans-bottles';
+    case 4:
+      return 'plastic';
+    case 5:
+      return 'paper';
+    default:
+      return 'unknown';
+  }
+};
 
 interface HomePresentationalProps {
   location: Location.LocationObject | null;
   errorMsg: string | null;
+  trashBins: TrashBin[];
 }
 
 export const HomePresentational = ({
   location,
   errorMsg,
+  trashBins,
 }: HomePresentationalProps) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const [selectedTrashBin, setSelectedTrashBin] = useState<TrashBin | null>(
+    null
+  );
+  const [modalVisible, setModalVisible] = useState(false);
+  const [filterMenuVisible, setFilterMenuVisible] = useState(false);
+  const [selectedFilters, setSelectedFilters] = useState<TrashType[]>(['all']);
+
+  const handleTrashBinPress = (trashBin: TrashBin) => {
+    setSelectedTrashBin(trashBin);
+    if (!modalVisible) {
+      setModalVisible(true);
+    }
+  };
+
+  const handleModalClose = () => {
+    setModalVisible(false);
+    setSelectedTrashBin(null);
+  };
+
+  const handleFilterButtonPress = () => {
+    setFilterMenuVisible(!filterMenuVisible);
+  };
+
+  const handleFilterChange = (filters: TrashType[]) => {
+    setSelectedFilters(filters);
+  };
 
   useEffect(() => {
     const pulseAnimation = Animated.loop(
@@ -45,7 +98,7 @@ export const HomePresentational = ({
   }
 
   return (
-    <View style={styles.container}>
+    <GestureHandlerRootView style={styles.container}>
       <MapView
         style={styles.map}
         region={
@@ -77,11 +130,49 @@ export const HomePresentational = ({
             </View>
           </Marker>
         )}
+
+        {/* ゴミ箱マーカー */}
+        {trashBins
+          .filter((trashBin) => {
+            if (selectedFilters.includes('all')) {
+              return true;
+            }
+            const trashType = categoryToTrashType(trashBin.category);
+            return selectedFilters.includes(trashType);
+          })
+          .map((trashBin) => (
+            <TrashPlot
+              key={trashBin.id}
+              trashBin={trashBin}
+              isSelected={selectedTrashBin?.id === trashBin.id}
+              onPress={handleTrashBinPress}
+            />
+          ))}
       </MapView>
+      {filterMenuVisible && (
+        <TouchableWithoutFeedback onPress={() => setFilterMenuVisible(false)}>
+          <View style={styles.overlay} />
+        </TouchableWithoutFeedback>
+      )}
+      <View style={styles.filterContainer}>
+        <FilterButton onPress={handleFilterButtonPress} />
+        {filterMenuVisible && (
+          <FilterMenu
+            selectedFilters={selectedFilters}
+            onFilterChange={handleFilterChange}
+          />
+        )}
+      </View>
       <View style={styles.fabContainer}>
         <TrushRegisterLink />
       </View>
-    </View>
+
+      <TrashModal
+        visible={modalVisible}
+        trashBin={selectedTrashBin}
+        onClose={handleModalClose}
+      />
+    </GestureHandlerRootView>
   );
 };
 
@@ -89,9 +180,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  mapContainer: {
+    flex: 1,
+  },
   map: {
-    width: '100%',
-    height: '100%',
+    ...StyleSheet.absoluteFillObject,
   },
   errorContainer: {
     flex: 1,
@@ -125,5 +223,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 20,
     right: 20,
+  },
+  filterContainer: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
   },
 });
