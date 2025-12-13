@@ -9,14 +9,11 @@ import Animated, {
   withDelay,
   withSpring,
   Easing,
-  runOnJS,
 } from 'react-native-reanimated';
+import EggBefore from '@/assets/images/eggs-before.png';
+import EggAfter from '@/assets/images/eggs-after.png';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-// 卵の画像
-const EGG_BEFORE = require('@/assets/images/eggs-before.png');
-const EGG_AFTER = require('@/assets/images/eggs-after.png');
 
 type Props = {
   onHatchComplete: () => void;
@@ -144,7 +141,7 @@ export function EggHatch({ onHatchComplete }: Props) {
 
     // Phase 3: 完了（3.5秒後）
     setTimeout(() => {
-      runOnJS(onHatchComplete)();
+      onHatchComplete();
     }, 3000);
   }, []);
 
@@ -168,7 +165,7 @@ export function EggHatch({ onHatchComplete }: Props) {
       {/* 卵 */}
       <Animated.View style={[styles.eggContainer, eggStyle]}>
         <Image
-          source={showCracked ? EGG_AFTER : EGG_BEFORE}
+          source={showCracked ? EggAfter : EggBefore}
           style={styles.eggImage}
           contentFit="contain"
         />
