@@ -10,6 +10,29 @@ export type TrashType =
   | 'paper'
   | 'unknown';
 
+// フィルターIDからバックエンドのカテゴリ文字列へのマッピング
+const trashTypeToBackendCategories: Record<TrashType, string[]> = {
+  all: [],
+  burnable: ['燃えるゴミ'],
+  'non-burnable': ['不燃ごみ'],
+  plastic: ['ペットボトル'],
+  'cans-bottles': ['缶', '瓶'],
+  paper: [], // バックエンドに存在しない
+  unknown: ['指定なし', '不明'],
+};
+
+export function matchesTrashFilter(
+  category: string,
+  selectedFilters: TrashType[]
+): boolean {
+  if (selectedFilters.includes('all')) {
+    return true;
+  }
+  return selectedFilters.some((filter) =>
+    trashTypeToBackendCategories[filter].includes(category)
+  );
+}
+
 interface FilterOption {
   id: TrashType;
   label: string;

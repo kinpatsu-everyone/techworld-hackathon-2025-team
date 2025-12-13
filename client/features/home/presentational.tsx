@@ -15,7 +15,11 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { TrushRegisterLink } from './components/TrushRegisterLink';
 import { TrashModal } from './components/TrashModal';
 import { FilterButton } from './components/FilterButton';
-import { FilterMenu, TrashType } from './components/FilterMenu';
+import {
+  FilterMenu,
+  TrashType,
+  matchesTrashFilter,
+} from './components/FilterMenu';
 import { TrashPlot } from '@/components/trash-plot';
 import { MonsterItem } from '@/lib/client';
 
@@ -66,10 +70,7 @@ const CurrentLocationMarker = memo(function CurrentLocationMarker({
     >
       <View style={styles.markerContainer}>
         <Animated.View
-          style={[
-            styles.greenCircle,
-            { transform: [{ scale: scaleAnim }] },
-          ]}
+          style={[styles.greenCircle, { transform: [{ scale: scaleAnim }] }]}
         />
       </View>
     </Marker>
@@ -151,14 +152,9 @@ export const HomePresentational = ({
 
           {/* ゴミ箱マーカー */}
           {trashBins
-            .filter((trashBin) => {
-              if (selectedFilters.includes('all')) {
-                return true;
-              }
-              return selectedFilters.includes(
-                trashBin.trash_category as TrashType
-              );
-            })
+            .filter((trashBin) =>
+              matchesTrashFilter(trashBin.trash_category, selectedFilters)
+            )
             .map((trashBin) => (
               <TrashPlot
                 key={trashBin.id}
