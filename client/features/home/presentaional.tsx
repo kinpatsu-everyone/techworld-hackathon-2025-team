@@ -1,12 +1,8 @@
 import { StyleSheet } from "react-native";
 import MapView from "react-native-maps";
 
-export const HomeScreen = () => {
-  return (
-    <>
-      <MapView style={styles.map} />
-    </>
-  );
+export const HomePresentational = () => {
+  return <MapView style={styles.map} />;
 };
 
 const styles = StyleSheet.create({
