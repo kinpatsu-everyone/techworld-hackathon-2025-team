@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Animated } from 'react-native';
+import { StyleSheet, Text, View, Animated, Platform } from 'react-native';
 import { useEffect, useRef } from 'react';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -46,40 +46,47 @@ export const HomePresentational = ({
 
   return (
     <View style={styles.container}>
-      <MapView
-        style={styles.map}
-        region={
-          location
-            ? {
+      {/* ヘッダー */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>ゴミ箱マップ</Text>
+      </View>
+      {/* マップエリア */}
+      <View style={styles.mapContainer}>
+        <MapView
+          style={styles.map}
+          region={
+            location
+              ? {
+                  latitude: location.coords.latitude,
+                  longitude: location.coords.longitude,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }
+              : undefined
+          }
+        >
+          {location && (
+            <Marker
+              coordinate={{
                 latitude: location.coords.latitude,
                 longitude: location.coords.longitude,
-                latitudeDelta: 0.01,
-                longitudeDelta: 0.01,
-              }
-            : undefined
-        }
-      >
-        {location && (
-          <Marker
-            coordinate={{
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-            }}
-            title="Current Location"
-          >
-            <View style={styles.markerContainer}>
-              <Animated.View
-                style={[
-                  styles.greenCircle,
-                  { transform: [{ scale: scaleAnim }] },
-                ]}
-              />
-            </View>
-          </Marker>
-        )}
-      </MapView>
-      <View style={styles.fabContainer}>
-        <TrushRegisterLink />
+              }}
+              title="Current Location"
+            >
+              <View style={styles.markerContainer}>
+                <Animated.View
+                  style={[
+                    styles.greenCircle,
+                    { transform: [{ scale: scaleAnim }] },
+                  ]}
+                />
+              </View>
+            </Marker>
+          )}
+        </MapView>
+        <View style={styles.fabContainer}>
+          <TrushRegisterLink />
+        </View>
       </View>
     </View>
   );
@@ -89,9 +96,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    backgroundColor: '#fff',
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingBottom: 12,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    height: Platform.OS === 'ios' ? 110 : 90,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  mapContainer: {
+    flex: 1,
+  },
   map: {
-    width: '100%',
-    height: '100%',
+    ...StyleSheet.absoluteFillObject,
   },
   errorContainer: {
     flex: 1,
