@@ -11,8 +11,8 @@ import (
 // CreateMonsterRequest はMonster登録リクエストです
 type CreateMonsterRequest struct {
 	Nickname  string                `multipart:"nickname"`  // ニックネーム
-	Latitude  string                `multipart:"latitude"`  // 緯度(-90.0 ~ 90.0)
-	Longitude string                `multipart:"longitude"` // 経度(-180.0 ~ 180.0)
+	Latitude  float64               `multipart:"latitude"`  // 緯度(-90.0 ~ 90.0)
+	Longitude float64               `multipart:"longitude"` // 経度(-180.0 ~ 180.0)
 	Image     *multipart.FileHeader `multipart:"image"`     // 画像ファイル
 }
 
@@ -62,12 +62,12 @@ func (r GetMonstersRequest) Validate() error {
 
 // MonsterItem はMonster一覧の各アイテムです
 type MonsterItem struct {
-	ID            string `json:"id"`             // モンスターID(UUID)
-	Nickname      string `json:"nickname"`       // ニックネーム
-	Latitude      string `json:"latitude"`       // 緯度(-90.0 ~ 90.0, nullable)
-	Longitude     string `json:"longitude"`      // 経度(-180.0 ~ 180.0, nullable)
-	TrashCategory string `json:"trash_category"` // ゴミ種別("指定なし", "燃えるゴミ", "不燃ごみ", "缶", "瓶", "ペットボトル")
-	ImageURL      string `json:"image_url"`      // 画像のURL (https://images.kinpatsu.fanlav.net/monsters/{uuid}/model.png)
+	ID            string  `json:"id"`             // モンスターID(UUID)
+	Nickname      string  `json:"nickname"`       // ニックネーム
+	Latitude      float64 `json:"latitude"`       // 緯度(-90.0 ~ 90.0, nullable)
+	Longitude     float64 `json:"longitude"`      // 経度(-180.0 ~ 180.0, nullable)
+	TrashCategory string  `json:"trash_category"` // ゴミ種別("指定なし", "燃えるゴミ", "不燃ごみ", "缶", "瓶", "ペットボトル")
+	ImageURL      string  `json:"image_url"`      // 画像のURL (https://images.kinpatsu.fanlav.net/monsters/{uuid}/model.png)
 }
 
 // GetMonstersResponse はMonster一覧取得レスポンスです
@@ -94,24 +94,24 @@ func GetMonsters(ctx context.Context, _ *GetMonstersRequest) (*GetMonstersRespon
 			{
 				ID:            "00000000-0000-0000-0000-000000000001",
 				Nickname:      "燃えるゴミモンスター",
-				Latitude:      "35.6812",
-				Longitude:     "139.7671",
+				Latitude:      35.6812,
+				Longitude:     139.7671,
 				TrashCategory: mysql.TrashCategoryToString(1), // 燃えるゴミ
 				ImageURL:      "https://images.kinpatsu.fanlav.net/monsters/00000000-0000-0000-0000-000000000001/model.png",
 			},
 			{
 				ID:            "00000000-0000-0000-0000-000000000002",
 				Nickname:      "缶モンスター",
-				Latitude:      "35.6823",
-				Longitude:     "139.7682",
+				Latitude:      35.6823,
+				Longitude:     139.7682,
 				TrashCategory: mysql.TrashCategoryToString(3), // 缶
 				ImageURL:      "https://images.kinpatsu.fanlav.net/monsters/00000000-0000-0000-0000-000000000002/model.png",
 			},
 			{
 				ID:            "00000000-0000-0000-0000-000000000003",
 				Nickname:      "ペットボトルモンスター",
-				Latitude:      "",
-				Longitude:     "",
+				Latitude:      0,
+				Longitude:     0,
 				TrashCategory: mysql.TrashCategoryToString(5), // ペットボトル
 				ImageURL:      "https://images.kinpatsu.fanlav.net/monsters/00000000-0000-0000-0000-000000000003/model.png",
 			},
@@ -157,8 +157,8 @@ func GetMonster(ctx context.Context, req *GetMonsterRequest) (*GetMonsterRespons
 		Monster: MonsterItem{
 			ID:            req.ID,
 			Nickname:      "燃えるゴミモンスター",
-			Latitude:      "35.6812",
-			Longitude:     "139.7671",
+			Latitude:      35.6812,
+			Longitude:     139.7671,
 			TrashCategory: mysql.TrashCategoryToString(1), // 燃えるゴミ
 			ImageURL:      fmt.Sprintf("https://images.kinpatsu.fanlav.net/monsters/%s/model.png", req.ID),
 		},
