@@ -1,4 +1,10 @@
-import { StyleSheet, Text, View, Animated, TouchableWithoutFeedback } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  Animated,
+  TouchableWithoutFeedback,
+} from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -8,31 +14,12 @@ import { TrashModal } from './components/TrashModal';
 import { FilterButton } from './components/FilterButton';
 import { FilterMenu, TrashType } from './components/FilterMenu';
 import { TrashPlot } from '@/components/trash-plot';
-import { TrashBin } from '@/types/model';
-
-// カテゴリ番号からTrashTypeへのマッピング
-// 1:燃えるゴミ, 2:不燃ごみ, 3:缶・瓶, 4:ペットボトル, 5:紙
-const categoryToTrashType = (category: number): TrashType => {
-  switch (category) {
-    case 1:
-      return 'burnable';
-    case 2:
-      return 'non-burnable';
-    case 3:
-      return 'cans-bottles';
-    case 4:
-      return 'plastic';
-    case 5:
-      return 'paper';
-    default:
-      return 'unknown';
-  }
-};
+import { MonsterItem } from '@/lib/client';
 
 interface HomePresentationalProps {
   location: Location.LocationObject | null;
   errorMsg: string | null;
-  trashBins: TrashBin[];
+  trashBins: MonsterItem[];
 }
 
 export const HomePresentational = ({
@@ -41,14 +28,14 @@ export const HomePresentational = ({
   trashBins,
 }: HomePresentationalProps) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const [selectedTrashBin, setSelectedTrashBin] = useState<TrashBin | null>(
+  const [selectedTrashBin, setSelectedTrashBin] = useState<MonsterItem | null>(
     null
   );
   const [modalVisible, setModalVisible] = useState(false);
   const [filterMenuVisible, setFilterMenuVisible] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState<TrashType[]>(['all']);
 
-  const handleTrashBinPress = (trashBin: TrashBin) => {
+  const handleTrashBinPress = (trashBin: MonsterItem) => {
     setSelectedTrashBin(trashBin);
     if (!modalVisible) {
       setModalVisible(true);
@@ -137,8 +124,9 @@ export const HomePresentational = ({
             if (selectedFilters.includes('all')) {
               return true;
             }
-            const trashType = categoryToTrashType(trashBin.category);
-            return selectedFilters.includes(trashType);
+            return selectedFilters.includes(
+              trashBin.trash_category as TrashType
+            );
           })
           .map((trashBin) => (
             <TrashPlot
