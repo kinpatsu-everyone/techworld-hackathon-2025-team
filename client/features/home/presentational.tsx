@@ -1,14 +1,18 @@
-import { StyleSheet, Text, View, Animated } from "react-native";
-import { useEffect, useRef } from "react";
-import MapView, { Marker } from "react-native-maps";
+import { StyleSheet, Text, View, Animated } from 'react-native';
+import { useEffect, useRef } from 'react';
+import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
+import { TrushRegisterLink } from './components/TrushRegisterLink';
 
 interface HomePresentationalProps {
   location: Location.LocationObject | null;
   errorMsg: string | null;
 }
 
-export const HomePresentational = ({ location, errorMsg }: HomePresentationalProps) => {
+export const HomePresentational = ({
+  location,
+  errorMsg,
+}: HomePresentationalProps) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -42,7 +46,7 @@ export const HomePresentational = ({ location, errorMsg }: HomePresentationalPro
 
   return (
     <View style={styles.container}>
-      <MapView 
+      <MapView
         style={styles.map}
         region={
           location
@@ -64,13 +68,19 @@ export const HomePresentational = ({ location, errorMsg }: HomePresentationalPro
             title="Current Location"
           >
             <View style={styles.markerContainer}>
-              <Animated.View 
-                style={[styles.greenCircle, { transform: [{ scale: scaleAnim }] }]} 
+              <Animated.View
+                style={[
+                  styles.greenCircle,
+                  { transform: [{ scale: scaleAnim }] },
+                ]}
               />
             </View>
           </Marker>
         )}
       </MapView>
+      <View style={styles.fabContainer}>
+        <TrushRegisterLink />
+      </View>
     </View>
   );
 };
@@ -80,19 +90,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   map: {
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
   },
   errorContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
   errorText: {
     fontSize: 16,
-    color: "red",
-    textAlign: "center",
+    color: 'red',
+    textAlign: 'center',
   },
   markerContainer: {
     alignItems: 'center',
@@ -110,5 +120,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 3,
     elevation: 5,
+  },
+  fabContainer: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
   },
 });
