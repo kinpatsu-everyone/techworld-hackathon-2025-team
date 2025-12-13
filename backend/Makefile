@@ -1,5 +1,6 @@
 ATLAS_ENV=local
 OUTPUT=../client/lib/client.ts
+BASE_URL=https://backend-api-713089770976.asia-northeast1.run.app
 
 .PHONY: help build run test lint clean docker-up docker-down docker-logs docker-build-prod deploy deploy-tag tf-init tf-plan tf-apply tf-destroy sqlc generate
 

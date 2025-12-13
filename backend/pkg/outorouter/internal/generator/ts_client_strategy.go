@@ -22,6 +22,9 @@ func (s TypeScriptClientStrategy) Generate(meta *parser.Metadata) (string, error
 
 	endpoints := sorted(meta.All)
 
+	// ネストされた型を収集
+	nestedTypes := collectNestedTypes(endpoints)
+
 	// エンドポイントごとにTypeScript用のデータを生成
 	tsEndpoints := make([]tsEndpointData, 0, len(endpoints))
 	for _, ep := range endpoints {
@@ -39,8 +42,9 @@ func (s TypeScriptClientStrategy) Generate(meta *parser.Metadata) (string, error
 	}
 
 	data := map[string]any{
-		"BaseURL":   s.BaseURL,
-		"Endpoints": tsEndpoints,
+		"BaseURL":     s.BaseURL,
+		"Endpoints":   tsEndpoints,
+		"NestedTypes": nestedTypes,
 	}
 
 	buf := &bytes.Buffer{}
@@ -64,9 +68,15 @@ type tsEndpointData struct {
 }
 
 type tsFieldData struct {
-	JSONName string
-	TSType   string
-	Optional bool
+	JSONName   string
+	TSType     string
+	Optional   bool
+	NestedType *tsNestedTypeData
+}
+
+type tsNestedTypeData struct {
+	Name   string
+	Fields []tsFieldData
 }
 
 func tagsToStrings(tags []parser.Tag) []string {
@@ -77,14 +87,51 @@ func tagsToStrings(tags []parser.Tag) []string {
 	return result
 }
 
+// collectNestedTypes は全エンドポイントからネストされた型を収集します
+func collectNestedTypes(endpoints []parser.Endpoint) []tsNestedTypeData {
+	seenTypes := make(map[string]bool)
+	var nestedTypes []tsNestedTypeData
+
+	var collectFromFields func(fields []parser.FieldInfo)
+	collectFromFields = func(fields []parser.FieldInfo) {
+		for _, f := range fields {
+			if f.NestedType != nil && f.NestedType.Name != "" {
+				if !seenTypes[f.NestedType.Name] {
+					seenTypes[f.NestedType.Name] = true
+					nestedTypes = append(nestedTypes, tsNestedTypeData{
+						Name:   f.NestedType.Name,
+						Fields: convertFieldsToTS(f.NestedType.Fields),
+					})
+					// 再帰的にネストされた型を収集
+					collectFromFields(f.NestedType.Fields)
+				}
+			}
+		}
+	}
+
+	for _, ep := range endpoints {
+		collectFromFields(ep.RequestTypeInfo.Fields)
+		collectFromFields(ep.ResponseTypeInfo.Fields)
+	}
+
+	return nestedTypes
+}
+
 func convertFieldsToTS(fields []parser.FieldInfo) []tsFieldData {
 	result := make([]tsFieldData, len(fields))
 	for i, f := range fields {
-		result[i] = tsFieldData{
+		fieldData := tsFieldData{
 			JSONName: f.JSONName,
 			TSType:   f.TSType,
 			Optional: f.Optional,
 		}
+		if f.NestedType != nil && f.NestedType.Name != "" {
+			fieldData.NestedType = &tsNestedTypeData{
+				Name:   f.NestedType.Name,
+				Fields: convertFieldsToTS(f.NestedType.Fields),
+			}
+		}
+		result[i] = fieldData
 	}
 	return result
 }
@@ -153,6 +200,23 @@ export class ApiError extends Error {
     this.name = "ApiError";
   }
 }
+
+// ============================================================================
+// Nested Type Definitions
+// ============================================================================
+{{- range .NestedTypes }}
+
+/** Nested type: {{ .Name }} */
+export interface {{ .Name }} {
+{{- if .Fields }}
+{{- range .Fields }}
+  {{ .JSONName }}{{ if .Optional }}?{{ end }}: {{ .TSType }};
+{{- end }}
+{{- else }}
+  // Empty type
+{{- end }}
+}
+{{- end }}
 
 // ============================================================================
 // Request/Response Type Definitions

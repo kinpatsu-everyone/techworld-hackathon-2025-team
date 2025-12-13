@@ -1,44 +1,30 @@
 import { useEffect, useState } from 'react';
+import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { HomePresentational } from './presentational';
 import { useLocation } from './hooks/useLocation';
 import { TrashBin } from '@/types/model';
+import { useApi } from '@/hooks/use-api';
+import { GetMonsterResponse, MonsterItem } from '@/lib/client';
 
 export const HomeContainer = () => {
   const { location, errorMsg } = useLocation();
-  const [trashBins, setTrashBins] = useState<TrashBin[]>([]);
+  const [trashBins, setTrashBins] = useState<MonsterItem[]>([]);
 
-  // 初回位置取得時のみゴミ箱位置を設定（後でfetchに変更予定）
+  const { data, isLoading } = useApi('/monster/v1/GetMonsters', {});
+
   useEffect(() => {
-    if (location && trashBins.length === 0) {
-      const { latitude, longitude } = location.coords;
-      setTrashBins([
-        {
-          id: 1,
-          latitude: latitude + 0.001,
-          longitude: longitude + 0.001,
-          title: 'ゴミ箱 #1',
-          image:
-            'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400&h=300&fit=crop&crop=center',
-        },
-        {
-          id: 2,
-          latitude: latitude - 0.002,
-          longitude: longitude + 0.003,
-          title: 'ゴミ箱 #2',
-          image:
-            'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400&h=300&fit=crop&crop=center',
-        },
-        {
-          id: 3,
-          latitude: latitude + 0.003,
-          longitude: longitude - 0.002,
-          title: 'ゴミ箱 #3',
-          image:
-            'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&crop=center',
-        },
-      ]);
+    if (data) {
+      setTrashBins(data.monsters);
     }
-  }, [location, trashBins.length]);
+  }, [data]);
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <HomePresentational
@@ -48,3 +34,11 @@ export const HomeContainer = () => {
     />
   );
 };
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

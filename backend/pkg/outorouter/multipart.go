@@ -177,17 +177,19 @@ func RegisterMultipartEndpoint[Req RequestObject, Res any](
 	var resZero Res
 
 	internalEp := internalEndpoint{
-		Kind:         KindFileUpload,
-		Domain:       ep.Domain,
-		Version:      ep.Version,
-		MethodName:   ep.MethodName,
-		Summary:      ep.Summary,
-		Description:  ep.Description,
-		Tags:         ep.Tags,
-		HTTPMethod:   http.MethodPost,
-		handler:      h,
-		RequestType:  reflect.TypeOf(reqZero).String(),
-		ResponseType: reflect.TypeOf(resZero).String(),
+		Kind:             KindFileUpload,
+		Domain:           ep.Domain,
+		Version:          ep.Version,
+		MethodName:       ep.MethodName,
+		Summary:          ep.Summary,
+		Description:      ep.Description,
+		Tags:             ep.Tags,
+		HTTPMethod:       http.MethodPost,
+		handler:          h,
+		RequestType:      reflect.TypeOf(reqZero).String(),
+		ResponseType:     reflect.TypeOf(resZero).String(),
+		RequestTypeInfo:  extractMultipartTypeInfo(reflect.TypeOf(reqZero)),
+		ResponseTypeInfo: extractTypeInfo(reflect.TypeOf(resZero)),
 	}
 
 	r.addToRegistry(internalEp)
@@ -269,4 +271,79 @@ func populateRequestFromMultipart(req interface{}, form *multipart.Form) error {
 	}
 
 	return nil
+}
+
+// extractMultipartTypeInfo はmultipart/form-dataリクエスト型からTypeInfoを抽出します
+// multipartタグとjsonタグの両方をサポートします
+func extractMultipartTypeInfo(t reflect.Type) TypeInfo {
+	visited := make(map[reflect.Type]bool)
+	return extractMultipartTypeInfoRecursive(t, visited)
+}
+
+// extractMultipartTypeInfoRecursive はGoの型からTypeInfoを再帰的に抽出します（multipart用）
+func extractMultipartTypeInfoRecursive(t reflect.Type, visited map[reflect.Type]bool) TypeInfo {
+	// ポインタの場合は要素型を取得
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	info := TypeInfo{
+		Name:   t.Name(),
+		Fields: make([]FieldInfo, 0),
+	}
+
+	// 構造体でない場合は空のフィールドリストを返す
+	if t.Kind() != reflect.Struct {
+		return info
+	}
+
+	// 循環参照チェック
+	if visited[t] {
+		return info
+	}
+	visited[t] = true
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+
+		// 非公開フィールドはスキップ
+		if !field.IsExported() {
+			continue
+		}
+
+		// multipartタグを優先し、なければJSONタグを使用
+		fieldName := ""
+		optional := false
+
+		multipartTag := field.Tag.Get("multipart")
+		if multipartTag != "" && multipartTag != "-" {
+			fieldName = multipartTag
+		} else {
+			jsonTag := field.Tag.Get("json")
+			fieldName, optional = parseJSONTag(jsonTag, field.Name)
+		}
+
+		// "-"の場合はスキップ
+		if fieldName == "-" {
+			continue
+		}
+
+		fieldInfo := FieldInfo{
+			Name:     field.Name,
+			JSONName: fieldName,
+			Type:     field.Type.String(),
+			TSType:   goTypeToTSType(field.Type),
+			Optional: optional,
+		}
+
+		// ネストされた構造体の型情報を抽出
+		nestedType := extractNestedTypeInfo(field.Type, visited)
+		if nestedType != nil {
+			fieldInfo.NestedType = nestedType
+		}
+
+		info.Fields = append(info.Fields, fieldInfo)
+	}
+
+	return info
 }

@@ -5,7 +5,7 @@
 // Configuration
 // ============================================================================
 
-const DEFAULT_BASE_URL = "http://localhost:8080";
+const DEFAULT_BASE_URL = "https://backend-api-713089770976.asia-northeast1.run.app";
 
 export interface ApiClientConfig {
   baseUrl?: string;
@@ -64,17 +64,64 @@ export class ApiError extends Error {
 }
 
 // ============================================================================
+// Nested Type Definitions
+// ============================================================================
+
+/** Nested type: CandidateResponse */
+export interface CandidateResponse {
+  content: ContentResponse;
+  finish_reason?: string;
+}
+
+/** Nested type: ContentResponse */
+export interface ContentResponse {
+  role: string;
+  parts: PartResponse[];
+}
+
+/** Nested type: PartResponse */
+export interface PartResponse {
+  text?: string;
+  image_data?: ImageData;
+  file_data?: FileData;
+}
+
+/** Nested type: ImageData */
+export interface ImageData {
+  mime_type: string;
+  data: string;
+}
+
+/** Nested type: FileData */
+export interface FileData {
+  mime_type: string;
+  file_uri: string;
+}
+
+/** Nested type: MonsterItem */
+export interface MonsterItem {
+  id: string;
+  nickname: string;
+  latitude: string;
+  longitude: string;
+  trash_category: string;
+  image_url: string;
+}
+
+// ============================================================================
 // Request/Response Type Definitions
 // ============================================================================
 
 /** Analyze Trash Bin and Generate Monster Character (Multipart) - Request */
 export interface AnalyzeAndGenerateImageRequest {
-  // Empty request
+  image: FileHeader;
+  model: string;
 }
 
 /** Analyze Trash Bin and Generate Monster Character (Multipart) - Response */
 export interface AnalyzeAndGenerateImageResponse {
-  // Empty response
+  image_data: string;
+  mime_type: string;
 }
 
 /** Analyze Image using Gemini - Request */
@@ -114,12 +161,15 @@ export interface HealthzResponse {
 
 /** Create Monster - Request */
 export interface CreateMonsterRequest {
-  // Empty request
+  nickname: string;
+  latitude: string;
+  longitude: string;
+  image: FileHeader;
 }
 
 /** Create Monster - Response */
 export interface CreateMonsterResponse {
-  // Empty response
+  monsterid: string;
 }
 
 /** Get Monster - Request */

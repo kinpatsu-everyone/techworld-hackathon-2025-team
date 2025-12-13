@@ -95,11 +95,12 @@ type rawTypeInfo struct {
 }
 
 type rawFieldInfo struct {
-	Name     string `json:"name"`
-	JSONName string `json:"json_name"`
-	Type     string `json:"type"`
-	TSType   string `json:"ts_type"`
-	Optional bool   `json:"optional"`
+	Name       string       `json:"name"`
+	JSONName   string       `json:"json_name"`
+	Type       string       `json:"type"`
+	TSType     string       `json:"ts_type"`
+	Optional   bool         `json:"optional"`
+	NestedType *rawTypeInfo `json:"nested_type,omitempty"`
 }
 
 func (r rawEndpoint) toEndpoint(domain string, version uint8) (Endpoint, error) {
@@ -135,13 +136,19 @@ func (r rawEndpoint) toEndpoint(domain string, version uint8) (Endpoint, error) 
 func convertTypeInfo(raw rawTypeInfo) TypeInfo {
 	fields := make([]FieldInfo, len(raw.Fields))
 	for i, f := range raw.Fields {
-		fields[i] = FieldInfo{
+		fieldInfo := FieldInfo{
 			Name:     f.Name,
 			JSONName: f.JSONName,
 			Type:     f.Type,
 			TSType:   f.TSType,
 			Optional: f.Optional,
 		}
+		// ネストされた型情報があれば再帰的に変換
+		if f.NestedType != nil {
+			nestedTypeInfo := convertTypeInfo(*f.NestedType)
+			fieldInfo.NestedType = &nestedTypeInfo
+		}
+		fields[i] = fieldInfo
 	}
 	return TypeInfo{
 		Name:   raw.Name,

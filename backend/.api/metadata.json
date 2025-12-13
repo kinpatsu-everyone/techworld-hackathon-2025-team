@@ -42,7 +42,109 @@
               "json_name": "candidates",
               "type": "[]handler.CandidateResponse",
               "ts_type": "CandidateResponse[]",
-              "optional": false
+              "optional": false,
+              "nested_type": {
+                "name": "CandidateResponse",
+                "fields": [
+                  {
+                    "name": "Content",
+                    "json_name": "content",
+                    "type": "handler.ContentResponse",
+                    "ts_type": "ContentResponse",
+                    "optional": false,
+                    "nested_type": {
+                      "name": "ContentResponse",
+                      "fields": [
+                        {
+                          "name": "Role",
+                          "json_name": "role",
+                          "type": "string",
+                          "ts_type": "string",
+                          "optional": false
+                        },
+                        {
+                          "name": "Parts",
+                          "json_name": "parts",
+                          "type": "[]handler.PartResponse",
+                          "ts_type": "PartResponse[]",
+                          "optional": false,
+                          "nested_type": {
+                            "name": "PartResponse",
+                            "fields": [
+                              {
+                                "name": "Text",
+                                "json_name": "text",
+                                "type": "string",
+                                "ts_type": "string",
+                                "optional": true
+                              },
+                              {
+                                "name": "ImageData",
+                                "json_name": "image_data",
+                                "type": "*handler.ImageData",
+                                "ts_type": "ImageData",
+                                "optional": true,
+                                "nested_type": {
+                                  "name": "ImageData",
+                                  "fields": [
+                                    {
+                                      "name": "MimeType",
+                                      "json_name": "mime_type",
+                                      "type": "string",
+                                      "ts_type": "string",
+                                      "optional": false
+                                    },
+                                    {
+                                      "name": "Data",
+                                      "json_name": "data",
+                                      "type": "string",
+                                      "ts_type": "string",
+                                      "optional": false
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "name": "FileData",
+                                "json_name": "file_data",
+                                "type": "*handler.FileData",
+                                "ts_type": "FileData",
+                                "optional": true,
+                                "nested_type": {
+                                  "name": "FileData",
+                                  "fields": [
+                                    {
+                                      "name": "MimeType",
+                                      "json_name": "mime_type",
+                                      "type": "string",
+                                      "ts_type": "string",
+                                      "optional": false
+                                    },
+                                    {
+                                      "name": "FileURI",
+                                      "json_name": "file_uri",
+                                      "type": "string",
+                                      "ts_type": "string",
+                                      "optional": false
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "name": "FinishReason",
+                    "json_name": "finish_reason",
+                    "type": "string",
+                    "ts_type": "string",
+                    "optional": true
+                  }
+                ]
+              }
             }
           ]
         }
@@ -118,12 +220,42 @@
           "Generation"
         ],
         "request_type_info": {
-          "name": "",
-          "fields": null
+          "name": "AnalyzeAndGenerateImageMultipartRequest",
+          "fields": [
+            {
+              "name": "Image",
+              "json_name": "image",
+              "type": "*multipart.FileHeader",
+              "ts_type": "FileHeader",
+              "optional": false
+            },
+            {
+              "name": "Model",
+              "json_name": "model",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            }
+          ]
         },
         "response_type_info": {
-          "name": "",
-          "fields": null
+          "name": "AnalyzeAndGenerateImageResponse",
+          "fields": [
+            {
+              "name": "ImageData",
+              "json_name": "image_data",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            },
+            {
+              "name": "MimeType",
+              "json_name": "mime_type",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            }
+          ]
         }
       }
     ]
@@ -194,12 +326,49 @@
           "Image"
         ],
         "request_type_info": {
-          "name": "",
-          "fields": null
+          "name": "CreateMonsterRequest",
+          "fields": [
+            {
+              "name": "Nickname",
+              "json_name": "nickname",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            },
+            {
+              "name": "Latitude",
+              "json_name": "latitude",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            },
+            {
+              "name": "Longitude",
+              "json_name": "longitude",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            },
+            {
+              "name": "Image",
+              "json_name": "image",
+              "type": "*multipart.FileHeader",
+              "ts_type": "FileHeader",
+              "optional": false
+            }
+          ]
         },
         "response_type_info": {
-          "name": "",
-          "fields": null
+          "name": "CreateMonsterResponse",
+          "fields": [
+            {
+              "name": "MonsterID",
+              "json_name": "monsterid",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            }
+          ]
         }
       },
       {
@@ -227,7 +396,54 @@
               "json_name": "monsters",
               "type": "[]handler.MonsterItem",
               "ts_type": "MonsterItem[]",
-              "optional": false
+              "optional": false,
+              "nested_type": {
+                "name": "MonsterItem",
+                "fields": [
+                  {
+                    "name": "ID",
+                    "json_name": "id",
+                    "type": "string",
+                    "ts_type": "string",
+                    "optional": false
+                  },
+                  {
+                    "name": "Nickname",
+                    "json_name": "nickname",
+                    "type": "string",
+                    "ts_type": "string",
+                    "optional": false
+                  },
+                  {
+                    "name": "Latitude",
+                    "json_name": "latitude",
+                    "type": "string",
+                    "ts_type": "string",
+                    "optional": false
+                  },
+                  {
+                    "name": "Longitude",
+                    "json_name": "longitude",
+                    "type": "string",
+                    "ts_type": "string",
+                    "optional": false
+                  },
+                  {
+                    "name": "TrashCategory",
+                    "json_name": "trash_category",
+                    "type": "string",
+                    "ts_type": "string",
+                    "optional": false
+                  },
+                  {
+                    "name": "ImageURL",
+                    "json_name": "image_url",
+                    "type": "string",
+                    "ts_type": "string",
+                    "optional": false
+                  }
+                ]
+              }
             }
           ]
         }
@@ -265,7 +481,54 @@
               "json_name": "monster",
               "type": "handler.MonsterItem",
               "ts_type": "MonsterItem",
-              "optional": false
+              "optional": false,
+              "nested_type": {
+                "name": "MonsterItem",
+                "fields": [
+                  {
+                    "name": "ID",
+                    "json_name": "id",
+                    "type": "string",
+                    "ts_type": "string",
+                    "optional": false
+                  },
+                  {
+                    "name": "Nickname",
+                    "json_name": "nickname",
+                    "type": "string",
+                    "ts_type": "string",
+                    "optional": false
+                  },
+                  {
+                    "name": "Latitude",
+                    "json_name": "latitude",
+                    "type": "string",
+                    "ts_type": "string",
+                    "optional": false
+                  },
+                  {
+                    "name": "Longitude",
+                    "json_name": "longitude",
+                    "type": "string",
+                    "ts_type": "string",
+                    "optional": false
+                  },
+                  {
+                    "name": "TrashCategory",
+                    "json_name": "trash_category",
+                    "type": "string",
+                    "ts_type": "string",
+                    "optional": false
+                  },
+                  {
+                    "name": "ImageURL",
+                    "json_name": "image_url",
+                    "type": "string",
+                    "ts_type": "string",
+                    "optional": false
+                  }
+                ]
+              }
             }
           ]
         }
