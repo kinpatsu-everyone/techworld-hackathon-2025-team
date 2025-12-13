@@ -5,13 +5,16 @@
 // Configuration
 // ============================================================================
 
-const DEFAULT_BASE_URL = "https://backend-api-713089770976.asia-northeast1.run.app";
+const DEFAULT_BASE_URL =
+  'https://backend-api-713089770976.asia-northeast1.run.app';
 
 export interface ApiClientConfig {
   baseUrl?: string;
   headers?: Record<string, string>;
   onRequest?: (config: RequestConfig) => RequestConfig | Promise<RequestConfig>;
-  onResponse?: <T>(response: ApiResponse<T>) => ApiResponse<T> | Promise<ApiResponse<T>>;
+  onResponse?: <T>(
+    response: ApiResponse<T>
+  ) => ApiResponse<T> | Promise<ApiResponse<T>>;
   onError?: (error: ApiError) => void;
 }
 
@@ -59,7 +62,7 @@ export class ApiError extends Error {
     public readonly response?: Response
   ) {
     super(message);
-    this.name = "ApiError";
+    this.name = 'ApiError';
   }
 }
 
@@ -102,8 +105,8 @@ export interface FileData {
 export interface MonsterItem {
   id: string;
   nickname: string;
-  latitude: string;
-  longitude: string;
+  latitude: number;
+  longitude: number;
   trash_category: string;
   image_url: string;
 }
@@ -162,8 +165,8 @@ export interface HealthzResponse {
 /** Create Monster - Request */
 export interface CreateMonsterRequest {
   nickname: string;
-  latitude: string;
-  longitude: string;
+  latitude: number;
+  longitude: number;
   image: FileHeader;
 }
 
@@ -197,13 +200,13 @@ export interface GetMonstersResponse {
 // ============================================================================
 
 export const Endpoints = {
-  AnalyzeAndGenerateImage: "/gemini/v1/AnalyzeAndGenerateImage",
-  AnalyzeImage: "/gemini/v1/AnalyzeImage",
-  GenerateImage: "/gemini/v1/GenerateImage",
-  Healthz: "/healthz/v1/Healthz",
-  CreateMonster: "/monster/v1/CreateMonster",
-  GetMonster: "/monster/v1/GetMonster",
-  GetMonsters: "/monster/v1/GetMonsters",
+  AnalyzeAndGenerateImage: '/gemini/v1/AnalyzeAndGenerateImage',
+  AnalyzeImage: '/gemini/v1/AnalyzeImage',
+  GenerateImage: '/gemini/v1/GenerateImage',
+  Healthz: '/healthz/v1/Healthz',
+  CreateMonster: '/monster/v1/CreateMonster',
+  GetMonster: '/monster/v1/GetMonster',
+  GetMonsters: '/monster/v1/GetMonsters',
 } as const;
 
 export type EndpointPath = (typeof Endpoints)[keyof typeof Endpoints];
@@ -217,31 +220,31 @@ export type EndpointPath = (typeof Endpoints)[keyof typeof Endpoints];
  * This enables type inference when calling the API.
  */
 export interface EndpointTypes {
-  "/gemini/v1/AnalyzeAndGenerateImage": {
+  '/gemini/v1/AnalyzeAndGenerateImage': {
     request: AnalyzeAndGenerateImageRequest;
     response: AnalyzeAndGenerateImageResponse;
   };
-  "/gemini/v1/AnalyzeImage": {
+  '/gemini/v1/AnalyzeImage': {
     request: AnalyzeImageRequest;
     response: AnalyzeImageResponse;
   };
-  "/gemini/v1/GenerateImage": {
+  '/gemini/v1/GenerateImage': {
     request: GenerateImageRequest;
     response: GenerateImageResponse;
   };
-  "/healthz/v1/Healthz": {
+  '/healthz/v1/Healthz': {
     request: HealthzRequest;
     response: HealthzResponse;
   };
-  "/monster/v1/CreateMonster": {
+  '/monster/v1/CreateMonster': {
     request: CreateMonsterRequest;
     response: CreateMonsterResponse;
   };
-  "/monster/v1/GetMonster": {
+  '/monster/v1/GetMonster': {
     request: GetMonsterRequest;
     response: GetMonsterResponse;
   };
-  "/monster/v1/GetMonsters": {
+  '/monster/v1/GetMonsters': {
     request: GetMonstersRequest;
     response: GetMonstersResponse;
   };
@@ -268,20 +271,20 @@ export interface EndpointTypes {
  */
 export async function api<P extends keyof EndpointTypes>(
   endpoint: P,
-  request: EndpointTypes[P]["request"],
+  request: EndpointTypes[P]['request'],
   options?: {
     headers?: Record<string, string>;
     signal?: AbortSignal;
   }
-): Promise<ApiResponse<EndpointTypes[P]["response"]>> {
+): Promise<ApiResponse<EndpointTypes[P]['response']>> {
   const config = getApiClientConfig();
   const url = `${config.baseUrl ?? DEFAULT_BASE_URL}${endpoint}`;
 
   let requestConfig: RequestConfig = {
-    method: "POST",
+    method: 'POST',
     url,
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       ...config.headers,
       ...options?.headers,
     },
@@ -312,7 +315,7 @@ export async function api<P extends keyof EndpointTypes>(
 
     const apiError = new ApiError(
       response.status,
-      errorData?.error?.error ?? "UNKNOWN_ERROR",
+      errorData?.error?.error ?? 'UNKNOWN_ERROR',
       errorData?.error?.message ?? response.statusText,
       response
     );
@@ -324,9 +327,9 @@ export async function api<P extends keyof EndpointTypes>(
     throw apiError;
   }
 
-  const data = (await response.json()) as EndpointTypes[P]["response"];
+  const data = (await response.json()) as EndpointTypes[P]['response'];
 
-  let result: ApiResponse<EndpointTypes[P]["response"]> = {
+  let result: ApiResponse<EndpointTypes[P]['response']> = {
     data,
     status: response.status,
     headers: response.headers,
@@ -356,7 +359,7 @@ export async function api<P extends keyof EndpointTypes>(
  */
 export function createApiCaller<P extends keyof EndpointTypes>(endpoint: P) {
   return (
-    request: EndpointTypes[P]["request"],
+    request: EndpointTypes[P]['request'],
     options?: {
       headers?: Record<string, string>;
       signal?: AbortSignal;
