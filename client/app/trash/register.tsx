@@ -1,12 +1,29 @@
 import { useState, useRef } from 'react';
-import { StyleSheet, View, Pressable, Text } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Pressable,
+  Text,
+  TextInput,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
+} from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Image } from 'expo-image';
+import * as Location from 'expo-location';
 import { Colors } from '@/constants/theme';
+
+type LocationData = {
+  latitude: number;
+  longitude: number;
+} | null;
 
 export default function TrashRegisterScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [photo, setPhoto] = useState<string | null>(null);
+  const [location, setLocation] = useState<LocationData>(null);
+  const [description, setDescription] = useState('');
   const cameraRef = useRef<CameraView>(null);
 
   // 権限がまだ読み込まれていない
@@ -36,6 +53,16 @@ export default function TrashRegisterScreen() {
   // 撮影処理
   const takePhoto = async () => {
     if (cameraRef.current) {
+      // 位置情報を取得
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const loc = await Location.getCurrentPositionAsync({});
+        setLocation({
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude,
+        });
+      }
+
       const result = await cameraRef.current.takePictureAsync();
       if (result) {
         setPhoto(result.uri);
@@ -46,43 +73,75 @@ export default function TrashRegisterScreen() {
   // 撮り直し
   const retake = () => {
     setPhoto(null);
+    setLocation(null);
+    setDescription('');
   };
 
   // 登録処理
   const handleRegister = () => {
-    // TODO: ここで位置情報取得＆サーバーに送信
-    alert('ゴミ箱を登録しました！');
+    console.log('=== ゴミ箱登録データ ===');
+    console.log('写真URI:', photo);
+    console.log('位置情報:', location);
+    console.log('説明:', description);
+    console.log('========================');
+
+    alert('ゴミ箱を登録しました！（コンソールを確認）');
     setPhoto(null);
+    setLocation(null);
+    setDescription('');
   };
 
   // 撮影済みの場合はプレビュー表示
   if (photo) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>この写真で登録しますか？</Text>
-        <View style={styles.previewContainer}>
-          <Image
-            source={{ uri: photo }}
-            style={styles.preview}
-            contentFit="cover"
-            contentPosition="center"
-          />
-        </View>
-        <View style={styles.buttonRow}>
-          <Pressable
-            style={[styles.button, styles.retakeButton]}
-            onPress={retake}
-          >
-            <Text style={styles.buttonText}>撮り直す</Text>
-          </Pressable>
-          <Pressable
-            style={[styles.button, styles.registerButton]}
-            onPress={handleRegister}
-          >
-            <Text style={styles.buttonText}>登録する</Text>
-          </Pressable>
-        </View>
-      </View>
+      <KeyboardAvoidingView
+        style={styles.flex1}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.title}>この写真で登録しますか？</Text>
+          <View style={styles.previewContainer}>
+            <Image
+              source={{ uri: photo }}
+              style={styles.preview}
+              contentFit="cover"
+              contentPosition="center"
+            />
+          </View>
+
+          {/* 説明入力欄 */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>説明</Text>
+            <TextInput
+              style={styles.descriptionInput}
+              placeholder="例：築地松竹ビルの5階"
+              placeholderTextColor="#999"
+              value={description}
+              onChangeText={setDescription}
+            />
+          </View>
+
+          <View style={styles.buttonRow}>
+            <Pressable
+              style={[styles.button, styles.retakeButton]}
+              onPress={retake}
+            >
+              <Text style={styles.buttonText}>撮り直す</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.button, styles.registerButton]}
+              onPress={handleRegister}
+            >
+              <Text style={styles.buttonText}>登録する</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -124,6 +183,16 @@ export default function TrashRegisterScreen() {
 }
 
 const styles = StyleSheet.create({
+  flex1: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
   container: {
     flex: 1,
     alignItems: 'center',
@@ -233,6 +302,31 @@ const styles = StyleSheet.create({
   },
   preview: {
     flex: 1,
+  },
+  inputContainer: {
+    width: '100%',
+    marginTop: 16,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 6,
+  },
+  descriptionInput: {
+    width: '100%',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    fontSize: 16,
+    color: '#333',
+  },
+  locationText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#666',
   },
   buttonRow: {
     flexDirection: 'row',
