@@ -1,19 +1,41 @@
 import { StyleSheet, Text, View, Animated } from 'react-native';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { TrushRegisterLink } from './components/TrushRegisterLink';
+import { TrashModal } from './components/TrashModal';
+import { TrashPlot } from '@/components/trash-plot';
+import { TrashBin } from '@/types/model';
 
 interface HomePresentationalProps {
   location: Location.LocationObject | null;
   errorMsg: string | null;
+  trashBins: TrashBin[];
 }
 
 export const HomePresentational = ({
   location,
   errorMsg,
+  trashBins,
 }: HomePresentationalProps) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const [selectedTrashBin, setSelectedTrashBin] = useState<TrashBin | null>(
+    null
+  );
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const handleTrashBinPress = (trashBin: TrashBin) => {
+    setSelectedTrashBin(trashBin);
+    if (!modalVisible) {
+      setModalVisible(true);
+    }
+  };
+
+  const handleModalClose = () => {
+    setModalVisible(false);
+    setSelectedTrashBin(null);
+  };
 
   useEffect(() => {
     const pulseAnimation = Animated.loop(
@@ -45,7 +67,7 @@ export const HomePresentational = ({
   }
 
   return (
-    <View style={styles.container}>
+    <GestureHandlerRootView style={styles.container}>
       <MapView
         style={styles.map}
         region={
@@ -77,11 +99,27 @@ export const HomePresentational = ({
             </View>
           </Marker>
         )}
+
+        {/* ゴミ箱マーカー */}
+        {trashBins.map((trashBin) => (
+          <TrashPlot
+            key={trashBin.id}
+            trashBin={trashBin}
+            isSelected={selectedTrashBin?.id === trashBin.id}
+            onPress={handleTrashBinPress}
+          />
+        ))}
       </MapView>
       <View style={styles.fabContainer}>
         <TrushRegisterLink />
       </View>
-    </View>
+
+      <TrashModal
+        visible={modalVisible}
+        trashBin={selectedTrashBin}
+        onClose={handleModalClose}
+      />
+    </GestureHandlerRootView>
   );
 };
 
