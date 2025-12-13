@@ -102,8 +102,8 @@ export interface FileData {
 export interface MonsterItem {
   id: string;
   nickname: string;
-  latitude: string;
-  longitude: string;
+  latitude: number;
+  longitude: number;
   trash_category: string;
   image_url: string;
 }
@@ -162,8 +162,8 @@ export interface HealthzResponse {
 /** Create Monster - Request */
 export interface CreateMonsterRequest {
   nickname: string;
-  latitude: string;
-  longitude: string;
+  latitude: number;
+  longitude: number;
   image: FileHeader;
 }
 

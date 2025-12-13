@@ -338,15 +338,15 @@
             {
               "name": "Latitude",
               "json_name": "latitude",
-              "type": "string",
-              "ts_type": "string",
+              "type": "float64",
+              "ts_type": "number",
               "optional": false
             },
             {
               "name": "Longitude",
               "json_name": "longitude",
-              "type": "string",
-              "ts_type": "string",
+              "type": "float64",
+              "ts_type": "number",
               "optional": false
             },
             {
@@ -417,15 +417,15 @@
                   {
                     "name": "Latitude",
                     "json_name": "latitude",
-                    "type": "string",
-                    "ts_type": "string",
+                    "type": "float64",
+                    "ts_type": "number",
                     "optional": false
                   },
                   {
                     "name": "Longitude",
                     "json_name": "longitude",
-                    "type": "string",
-                    "ts_type": "string",
+                    "type": "float64",
+                    "ts_type": "number",
                     "optional": false
                   },
                   {
@@ -502,15 +502,15 @@
                   {
                     "name": "Latitude",
                     "json_name": "latitude",
-                    "type": "string",
-                    "ts_type": "string",
+                    "type": "float64",
+                    "ts_type": "number",
                     "optional": false
                   },
                   {
                     "name": "Longitude",
                     "json_name": "longitude",
-                    "type": "string",
-                    "ts_type": "string",
+                    "type": "float64",
+                    "ts_type": "number",
                     "optional": false
                   },
                   {
