@@ -5,16 +5,71 @@ import {
   Animated,
   TouchableWithoutFeedback,
 } from 'react-native';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, memo } from 'react';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
+import { STATUSBAR_HEIGHT } from '@/components/status-bar';
+
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { TrushRegisterLink } from './components/TrushRegisterLink';
 import { TrashModal } from './components/TrashModal';
 import { FilterButton } from './components/FilterButton';
-import { FilterMenu, TrashType } from './components/FilterMenu';
+import {
+  FilterMenu,
+  TrashType,
+  matchesTrashFilter,
+} from './components/FilterMenu';
 import { TrashPlot } from '@/components/trash-plot';
 import { MonsterItem } from '@/lib/client';
+
+// 現在位置マーカーを別コンポーネントに分離してメモ化
+const CurrentLocationMarker = memo(function CurrentLocationMarker({
+  latitude,
+  longitude,
+}: {
+  latitude: number;
+  longitude: number;
+}) {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const pulseAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 1.2,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    pulseAnimation.start();
+
+    return () => pulseAnimation.stop();
+  }, [scaleAnim]);
+
+  return (
+    <Marker
+      coordinate={{
+        latitude,
+        longitude,
+      }}
+      title="Current Location"
+      tracksViewChanges={true}
+    >
+      <View style={styles.markerContainer}>
+        <Animated.View
+          style={[styles.greenCircle, { transform: [{ scale: scaleAnim }] }]}
+        />
+      </View>
+    </Marker>
+  );
+});
 
 interface HomePresentationalProps {
   location: Location.LocationObject | null;
@@ -27,7 +82,6 @@ export const HomePresentational = ({
   errorMsg,
   trashBins,
 }: HomePresentationalProps) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
   const [selectedTrashBin, setSelectedTrashBin] = useState<MonsterItem | null>(
     null
   );
@@ -55,27 +109,6 @@ export const HomePresentational = ({
     setSelectedFilters(filters);
   };
 
-  useEffect(() => {
-    const pulseAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(scaleAnim, {
-          toValue: 1.2,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    pulseAnimation.start();
-
-    return () => pulseAnimation.stop();
-  }, [scaleAnim]);
-
   if (errorMsg) {
     return (
       <View style={styles.errorContainer}>
@@ -86,72 +119,61 @@ export const HomePresentational = ({
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <MapView
-        style={styles.map}
-        region={
-          location
-            ? {
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
-                latitudeDelta: 0.01,
-                longitudeDelta: 0.01,
-              }
-            : undefined
-        }
-      >
-        {location && (
-          <Marker
-            coordinate={{
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-            }}
-            title="Current Location"
-          >
-            <View style={styles.markerContainer}>
-              <Animated.View
-                style={[
-                  styles.greenCircle,
-                  { transform: [{ scale: scaleAnim }] },
-                ]}
-              />
-            </View>
-          </Marker>
-        )}
-
-        {/* ゴミ箱マーカー */}
-        {trashBins
-          .filter((trashBin) => {
-            if (selectedFilters.includes('all')) {
-              return true;
-            }
-            return selectedFilters.includes(
-              trashBin.trash_category as TrashType
-            );
-          })
-          .map((trashBin) => (
-            <TrashPlot
-              key={trashBin.id}
-              trashBin={trashBin}
-              onPress={handleTrashBinPress}
-            />
-          ))}
-      </MapView>
-      {filterMenuVisible && (
-        <TouchableWithoutFeedback onPress={() => setFilterMenuVisible(false)}>
-          <View style={styles.overlay} />
-        </TouchableWithoutFeedback>
-      )}
-      <View style={styles.filterContainer}>
-        <FilterButton onPress={handleFilterButtonPress} />
-        {filterMenuVisible && (
-          <FilterMenu
-            selectedFilters={selectedFilters}
-            onFilterChange={handleFilterChange}
-          />
-        )}
+      <View style={[styles.statusBar, { height: STATUSBAR_HEIGHT }]} />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>ゴミ箱マップ</Text>
       </View>
-      <View style={styles.fabContainer}>
-        <TrushRegisterLink />
+      <View style={styles.mapContainer}>
+        <MapView
+          style={styles.map}
+          region={
+            location
+              ? {
+                  latitude: location.coords.latitude,
+                  longitude: location.coords.longitude,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }
+              : undefined
+          }
+        >
+          {location && (
+            <CurrentLocationMarker
+              latitude={location.coords.latitude}
+              longitude={location.coords.longitude}
+            />
+          )}
+
+          {/* ゴミ箱マーカー */}
+          {trashBins
+            .filter((trashBin) =>
+              matchesTrashFilter(trashBin.trash_category, selectedFilters)
+            )
+            .map((trashBin) => (
+              <TrashPlot
+                key={trashBin.id}
+                trashBin={trashBin}
+                onPress={handleTrashBinPress}
+              />
+            ))}
+        </MapView>
+        {filterMenuVisible && (
+          <TouchableWithoutFeedback onPress={() => setFilterMenuVisible(false)}>
+            <View style={styles.overlay} />
+          </TouchableWithoutFeedback>
+        )}
+        <View style={styles.filterContainer}>
+          <FilterButton onPress={handleFilterButtonPress} />
+          {filterMenuVisible && (
+            <FilterMenu
+              selectedFilters={selectedFilters}
+              onFilterChange={handleFilterChange}
+            />
+          )}
+        </View>
+        <View style={styles.fabContainer}>
+          <TrushRegisterLink />
+        </View>
       </View>
 
       <TrashModal
@@ -166,11 +188,23 @@ export const HomePresentational = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f8f8f8',
+  },
+  statusBar: {
+    backgroundColor: '#f8f8f8',
+  },
+  header: {
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#c8c8c8',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#000',
   },
   mapContainer: {
     flex: 1,
@@ -213,7 +247,7 @@ const styles = StyleSheet.create({
   },
   filterContainer: {
     position: 'absolute',
-    top: 60,
+    top: 20,
     left: 20,
   },
   overlay: {
