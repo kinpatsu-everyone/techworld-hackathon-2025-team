@@ -124,34 +124,28 @@ export function EggHatch({ onHatchComplete }: Props) {
         withTiming(18, { duration: 40 }),
         withTiming(0, { duration: 40 })
       );
-    }, 800);
+    }, 600);
 
     // ひび割れ画像に切り替え
     setTimeout(() => {
       setShowCracked(true);
-    }, 1700);
+    }, 1800);
 
     // Phase 2: 爆発（1.8秒後）
     setTimeout(() => {
       setShowConfetti(true);
 
       // フラッシュ
-      flashOpacity.value = withSequence(
-        withTiming(1, { duration: 100 }),
-        withTiming(0, { duration: 300 })
-      );
+      flashOpacity.value = withSequence(withTiming(1, { duration: 500 }));
 
       // 卵が消える
-      eggScale.value = withTiming(1.3, { duration: 150 }, () => {
-        eggScale.value = withTiming(0, { duration: 200 });
-      });
-      eggOpacity.value = withDelay(150, withTiming(0, { duration: 200 }));
-    }, 2000);
+      eggScale.value = withTiming(1.3, { duration: 500 });
+    }, 2300);
 
     // Phase 3: 完了（3.5秒後）
     setTimeout(() => {
       runOnJS(onHatchComplete)();
-    }, 2500);
+    }, 3000);
   }, []);
 
   const eggStyle = useAnimatedStyle(() => ({
