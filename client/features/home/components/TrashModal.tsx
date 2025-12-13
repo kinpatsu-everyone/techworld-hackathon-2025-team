@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { StyleSheet, Text, View, Pressable } from 'react-native';
+import { Image } from 'expo-image';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { TrashBin } from '@/types/model';
 
@@ -48,6 +49,13 @@ export const TrashModal: React.FC<TrashModalProps> = ({
       handleIndicatorStyle={styles.handleIndicator}
     >
       <BottomSheetView style={styles.content}>
+        <Image
+          source={{ uri: trashBin.image }}
+          style={styles.image}
+          contentFit="cover"
+          transition={200}
+        />
+
         <Text style={styles.title}>{trashBin.title}</Text>
         <Text style={styles.subtitle}>ゴミ箱の詳細情報</Text>
 
@@ -87,6 +95,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingBottom: 40,
+  },
+  image: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 16,
   },
   title: {
     fontSize: 24,

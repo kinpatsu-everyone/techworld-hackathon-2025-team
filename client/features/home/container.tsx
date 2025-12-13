@@ -17,18 +17,24 @@ export const HomeContainer = () => {
           latitude: latitude + 0.001,
           longitude: longitude + 0.001,
           title: 'ゴミ箱 #1',
+          image:
+            'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400&h=300&fit=crop&crop=center',
         },
         {
           id: 2,
           latitude: latitude - 0.002,
           longitude: longitude + 0.003,
           title: 'ゴミ箱 #2',
+          image:
+            'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400&h=300&fit=crop&crop=center',
         },
         {
           id: 3,
           latitude: latitude + 0.003,
           longitude: longitude - 0.002,
           title: 'ゴミ箱 #3',
+          image:
+            'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&crop=center',
         },
       ]);
     }
