@@ -4,13 +4,12 @@ import {
   View,
   Animated,
   TouchableWithoutFeedback,
-  Platform,
-  StatusBar,
 } from 'react-native';
 import React, { useEffect, useRef, useState, memo } from 'react';
 import MapView, { Marker } from 'react-native-maps';
-import Constants from 'expo-constants';
 import * as Location from 'expo-location';
+import { STATUSBAR_HEIGHT } from '@/components/status-bar';
+
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { TrushRegisterLink } from './components/TrushRegisterLink';
 import { TrashModal } from './components/TrashModal';
@@ -22,11 +21,6 @@ import {
 } from './components/FilterMenu';
 import { TrashPlot } from '@/components/trash-plot';
 import { MonsterItem } from '@/lib/client';
-
-const STATUSBAR_HEIGHT =
-  Platform.OS === 'ios'
-    ? Constants.statusBarHeight
-    : StatusBar.currentHeight || 0;
 
 // 現在位置マーカーを別コンポーネントに分離してメモ化
 const CurrentLocationMarker = memo(function CurrentLocationMarker({
