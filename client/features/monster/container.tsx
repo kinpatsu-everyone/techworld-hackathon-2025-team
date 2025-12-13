@@ -3,6 +3,7 @@ import type { Monster } from './types';
 
 type Props = {
   monsterId: string;
+  isFromRegister?: boolean;
 };
 
 // TODO: 実際のAPI連携時に置き換え
@@ -17,9 +18,17 @@ const MOCK_MONSTER: Monster = {
   monsterImage: 'https://picsum.photos/401',
 };
 
-export function MonsterDetailContainer({ monsterId }: Props) {
+export function MonsterDetailContainer({
+  monsterId,
+  isFromRegister = false,
+}: Props) {
   // TODO: useQueryなどでAPIからデータ取得
   const monster = MOCK_MONSTER;
 
-  return <MonsterDetailPresentational monster={monster} />;
+  return (
+    <MonsterDetailPresentational
+      monster={monster}
+      isFromRegister={isFromRegister}
+    />
+  );
 }
