@@ -1,7 +1,14 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 
-export type TrashType = 'all' | 'burnable' | 'non-burnable' | 'plastic' | 'cans-bottles' | 'paper' | 'unknown';
+export type TrashType =
+  | 'all'
+  | 'burnable'
+  | 'non-burnable'
+  | 'plastic'
+  | 'cans-bottles'
+  | 'paper'
+  | 'unknown';
 
 interface FilterOption {
   id: TrashType;
@@ -62,7 +69,14 @@ export const FilterMenu: React.FC<FilterMenuProps> = ({
         >
           <View style={[styles.colorDot, { backgroundColor: option.color }]} />
           <Text style={styles.optionLabel}>{option.label}</Text>
-          <Text style={[styles.checkmark, !isSelected(option.id) && styles.checkmarkHidden]}>✓</Text>
+          <Text
+            style={[
+              styles.checkmark,
+              !isSelected(option.id) && styles.checkmarkHidden,
+            ]}
+          >
+            ✓
+          </Text>
         </TouchableOpacity>
       ))}
     </View>
