@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { HomePresentational } from './presentational';
 import { useLocation } from './hooks/useLocation';
-import { TrashBin } from '@/types/model';
 import { useApi } from '@/hooks/use-api';
-import { GetMonsterResponse, MonsterItem } from '@/lib/client';
+import { MonsterItem } from '@/lib/client';
 
 export const HomeContainer = () => {
   const { location, errorMsg } = useLocation();
