@@ -132,7 +132,6 @@ export const HomePresentational = ({
             <TrashPlot
               key={trashBin.id}
               trashBin={trashBin}
-              isSelected={selectedTrashBin?.id === trashBin.id}
               onPress={handleTrashBinPress}
             />
           ))}
