@@ -1,6 +1,8 @@
-import { HomePresentational } from "./presentaional";
+import { HomePresentational } from "./presentational";
+import { useLocation } from "./hooks/useLocation";
 
 export const HomeContainer = () => {
-  // const response = fetch(`${process.env.API_URL}/`);
-  return <HomePresentational />;
+  const { location, errorMsg } = useLocation();
+
+  return <HomePresentational location={location} errorMsg={errorMsg} />;
 };
