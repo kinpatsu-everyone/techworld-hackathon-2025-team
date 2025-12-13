@@ -1,19 +1,41 @@
-import { StyleSheet, Text, View, Animated, Platform } from 'react-native';
-import { useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, Animated } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { TrushRegisterLink } from './components/TrushRegisterLink';
+import { TrashModal } from './components/TrashModal';
+import { TrashPlot } from '@/components/trash-plot';
+import { TrashBin } from '@/types/model';
 
 interface HomePresentationalProps {
   location: Location.LocationObject | null;
   errorMsg: string | null;
+  trashBins: TrashBin[];
 }
 
 export const HomePresentational = ({
   location,
   errorMsg,
+  trashBins,
 }: HomePresentationalProps) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const [selectedTrashBin, setSelectedTrashBin] = useState<TrashBin | null>(
+    null
+  );
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const handleTrashBinPress = (trashBin: TrashBin) => {
+    setSelectedTrashBin(trashBin);
+    if (!modalVisible) {
+      setModalVisible(true);
+    }
+  };
+
+  const handleModalClose = () => {
+    setModalVisible(false);
+    setSelectedTrashBin(null);
+  };
 
   useEffect(() => {
     const pulseAnimation = Animated.loop(
@@ -45,66 +67,65 @@ export const HomePresentational = ({
   }
 
   return (
-    <View style={styles.container}>
-      {/* ヘッダー */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>ゴミ箱マップ</Text>
-      </View>
-      {/* マップエリア */}
-      <View style={styles.mapContainer}>
-        <MapView
-          style={styles.map}
-          region={
-            location
-              ? {
-                  latitude: location.coords.latitude,
-                  longitude: location.coords.longitude,
-                  latitudeDelta: 0.01,
-                  longitudeDelta: 0.01,
-                }
-              : undefined
-          }
-        >
-          {location && (
-            <Marker
-              coordinate={{
+    <GestureHandlerRootView style={styles.container}>
+      <MapView
+        style={styles.map}
+        region={
+          location
+            ? {
                 latitude: location.coords.latitude,
                 longitude: location.coords.longitude,
-              }}
-              title="Current Location"
-            >
-              <View style={styles.markerContainer}>
-                <Animated.View
-                  style={[
-                    styles.greenCircle,
-                    { transform: [{ scale: scaleAnim }] },
-                  ]}
-                />
-              </View>
-            </Marker>
-          )}
-        </MapView>
-        <View style={styles.fabContainer}>
-          <TrushRegisterLink />
-        </View>
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+              }
+            : undefined
+        }
+      >
+        {location && (
+          <Marker
+            coordinate={{
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+            }}
+            title="Current Location"
+          >
+            <View style={styles.markerContainer}>
+              <Animated.View
+                style={[
+                  styles.greenCircle,
+                  { transform: [{ scale: scaleAnim }] },
+                ]}
+              />
+            </View>
+          </Marker>
+        )}
+
+        {/* ゴミ箱マーカー */}
+        {trashBins.map((trashBin) => (
+          <TrashPlot
+            key={trashBin.id}
+            trashBin={trashBin}
+            isSelected={selectedTrashBin?.id === trashBin.id}
+            onPress={handleTrashBinPress}
+          />
+        ))}
+      </MapView>
+      <View style={styles.fabContainer}>
+        <TrushRegisterLink />
       </View>
-    </View>
+
+      <TrashModal
+        visible={modalVisible}
+        trashBin={selectedTrashBin}
+        onClose={handleModalClose}
+      />
+    </GestureHandlerRootView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    backgroundColor: '#fff',
-    paddingTop: Platform.OS === 'ios' ? 50 : 30,
-    paddingBottom: 12,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    height: Platform.OS === 'ios' ? 110 : 90,
   },
   headerTitle: {
     fontSize: 20,
