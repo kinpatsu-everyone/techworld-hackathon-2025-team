@@ -16,6 +16,14 @@ export default function RootLayout() {
           name="trash/register"
           options={{ title: 'ゴミ箱を撮影' }}
         />
+        <Stack.Screen
+          name="monsters/index"
+          options={{ title: 'ゴミスター一覧' }}
+        />
+        <Stack.Screen
+          name="monsters/[id]"
+          options={{ title: 'ゴミスター詳細' }}
+        />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

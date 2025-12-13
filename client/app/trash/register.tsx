@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { StyleSheet, View, Pressable, Text } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
+import { router } from 'expo-router';
 import { Colors } from '@/constants/theme';
 import { CameraViewWithScope } from '@/features/register/components/camera-view-with-scope';
 import { CaptureButton } from '@/features/register/components/capture-button';
@@ -78,10 +79,14 @@ export default function TrashRegisterScreen() {
     console.log('説明:', description);
     console.log('========================');
 
-    alert('ゴミ箱を登録しました！（コンソールを確認）');
+    // TODO: APIに送信して、返ってきたIDで遷移
+    const mockMonsterId = '1';
+
     setPhoto(null);
     setLocation(null);
     setDescription('');
+
+    router.push(`/monsters/${mockMonsterId}`);
   };
 
   // 撮影済みの場合はプレビュー表示
