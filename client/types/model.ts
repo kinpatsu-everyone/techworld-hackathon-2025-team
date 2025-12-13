@@ -4,4 +4,5 @@ export interface TrashBin {
   longitude: number;
   title: string;
   image: string;
+  category: number;
 }

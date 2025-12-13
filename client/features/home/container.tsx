@@ -19,6 +19,7 @@ export const HomeContainer = () => {
           title: 'ゴミ箱 #1',
           image:
             'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400&h=300&fit=crop&crop=center',
+          category: 1, // 燃えるゴミ
         },
         {
           id: 2,
@@ -27,6 +28,7 @@ export const HomeContainer = () => {
           title: 'ゴミ箱 #2',
           image:
             'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400&h=300&fit=crop&crop=center',
+          category: 4, // ペットボトル
         },
         {
           id: 3,
@@ -35,6 +37,7 @@ export const HomeContainer = () => {
           title: 'ゴミ箱 #3',
           image:
             'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&crop=center',
+          category: 2, // 不燃ごみ
         },
       ]);
     }
