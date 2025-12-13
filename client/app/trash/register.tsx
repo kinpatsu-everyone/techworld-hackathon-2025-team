@@ -92,6 +92,19 @@ export default function TrashRegisterScreen() {
       {/* 1:1のカメラプレビュー */}
       <View style={styles.cameraContainer}>
         <CameraView ref={cameraRef} style={styles.camera} facing="back" />
+        {/* スコープ風オーバーレイ */}
+        <View style={styles.targetOverlay}>
+          <View style={styles.scopeOuter}>
+            {/* 十字線 */}
+            <View style={[styles.scopeLine, styles.scopeLineTop]} />
+            <View style={[styles.scopeLine, styles.scopeLineBottom]} />
+            <View style={[styles.scopeLine, styles.scopeLineLeft]} />
+            <View style={[styles.scopeLine, styles.scopeLineRight]} />
+
+            {/* 中心点 */}
+            <View style={styles.centerDot} />
+          </View>
+        </View>
       </View>
 
       <Text style={styles.subtitle}>ゴミ箱が写るように撮影してください</Text>
@@ -139,6 +152,51 @@ const styles = StyleSheet.create({
   },
   camera: {
     flex: 1,
+  },
+  targetOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scopeOuter: {
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    borderWidth: 2,
+    borderColor: Colors.light.tint,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scopeLine: {
+    position: 'absolute',
+    backgroundColor: Colors.light.tint,
+  },
+  scopeLineTop: {
+    width: 1.5,
+    height: 60,
+    top: -20,
+  },
+  scopeLineBottom: {
+    width: 1.5,
+    height: 60,
+    bottom: -20,
+  },
+  scopeLineLeft: {
+    width: 60,
+    height: 1.5,
+    left: -20,
+  },
+  scopeLineRight: {
+    width: 60,
+    height: 1.5,
+    right: -20,
+  },
+  centerDot: {
+    position: 'absolute',
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.light.tint,
   },
   captureButton: {
     marginTop: 30,
