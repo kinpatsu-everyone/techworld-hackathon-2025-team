@@ -12,6 +12,25 @@ interface TrashModalProps {
   onClose: () => void;
 }
 
+const getCategoryColor = (category: string): string => {
+  switch (category) {
+    case '指定なし':
+      return '#808080';
+    case '燃えるゴミ':
+      return '#FF9500';
+    case '不燃ごみ':
+      return '#007AFF';
+    case '缶':
+      return '#FFCC00';
+    case '瓶':
+      return '#AF52DE';
+    case 'ペットボトル':
+      return '#34C759';
+    default:
+      return '#C7C7CC';
+  }
+};
+
 export const TrashModal: React.FC<TrashModalProps> = ({
   visible,
   trashBin,
@@ -92,8 +111,18 @@ export const TrashModal: React.FC<TrashModalProps> = ({
             <Text style={styles.value}>{trashBin.longitude}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.label}>状態:</Text>
-            <Text style={[styles.value, styles.statusActive]}>利用可能</Text>
+            <Text style={styles.label}>ゴミの種類</Text>
+            <Text
+              style={[
+                styles.value,
+                {
+                  color: getCategoryColor(trashBin.trash_category),
+                  fontWeight: '600',
+                },
+              ]}
+            >
+              {trashBin.trash_category}
+            </Text>
           </View>
         </View>
 
