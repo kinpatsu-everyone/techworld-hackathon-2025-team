@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import * as Location from 'expo-location';
 
 export const useLocation = () => {
-  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const [location, setLocation] = useState<Location.LocationObject | null>(
+    null
+  );
   const [heading, setHeading] = useState<number>(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
