@@ -4,13 +4,32 @@ import { Image } from 'expo-image';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import * as Linking from 'expo-linking';
 import { Ionicons } from '@expo/vector-icons';
-import { TrashBin } from '@/types/model';
+import { MonsterItem } from '@/lib/client';
 
 interface TrashModalProps {
   visible: boolean;
-  trashBin: TrashBin | null;
+  trashBin: MonsterItem | null;
   onClose: () => void;
 }
+
+const getCategoryColor = (category: string): string => {
+  switch (category) {
+    case '指定なし':
+      return '#808080';
+    case '燃えるゴミ':
+      return '#FF9500';
+    case '不燃ごみ':
+      return '#007AFF';
+    case '缶':
+      return '#FFCC00';
+    case '瓶':
+      return '#AF52DE';
+    case 'ペットボトル':
+      return '#34C759';
+    default:
+      return '#C7C7CC';
+  }
+};
 
 export const TrashModal: React.FC<TrashModalProps> = ({
   visible,
@@ -40,20 +59,16 @@ export const TrashModal: React.FC<TrashModalProps> = ({
 
   const handleOpenGoogleMaps = () => {
     if (!trashBin) return;
-    Alert.alert(
-      'Google Mapで開く',
-      'この場所をGoogle Mapで表示しますか？',
-      [
-        { text: 'キャンセル', style: 'cancel' },
-        {
-          text: '開く',
-          onPress: () => {
-            const url = `https://www.google.com/maps?q=${trashBin.latitude},${trashBin.longitude}`;
-            Linking.openURL(url);
-          },
+    Alert.alert('Google Mapで開く', 'この場所をGoogle Mapで表示しますか？', [
+      { text: 'キャンセル', style: 'cancel' },
+      {
+        text: '開く',
+        onPress: () => {
+          const url = `https://www.google.com/maps?q=${trashBin.latitude},${trashBin.longitude}`;
+          Linking.openURL(url);
         },
-      ]
-    );
+      },
+    ]);
   };
 
   if (!trashBin) return null;
@@ -70,7 +85,7 @@ export const TrashModal: React.FC<TrashModalProps> = ({
     >
       <BottomSheetView style={styles.content}>
         <Image
-          source={{ uri: trashBin.image }}
+          source={{ uri: trashBin.image_url }}
           style={styles.image}
           contentFit="cover"
           transition={200}
@@ -78,7 +93,7 @@ export const TrashModal: React.FC<TrashModalProps> = ({
 
         <View style={styles.headerRow}>
           <View style={styles.headerTextContainer}>
-            <Text style={styles.title}>{trashBin.title}</Text>
+            <Text style={styles.title}>{trashBin.nickname}</Text>
             <Text style={styles.subtitle}>ゴミ箱の詳細情報</Text>
           </View>
           <Pressable onPress={handleOpenGoogleMaps} style={styles.copyButton}>
@@ -89,15 +104,25 @@ export const TrashModal: React.FC<TrashModalProps> = ({
         <View style={styles.infoContainer}>
           <View style={styles.infoRow}>
             <Text style={styles.label}>緯度:</Text>
-            <Text style={styles.value}>{trashBin.latitude.toFixed(6)}</Text>
+            <Text style={styles.value}>{trashBin.latitude}</Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.label}>経度:</Text>
-            <Text style={styles.value}>{trashBin.longitude.toFixed(6)}</Text>
+            <Text style={styles.value}>{trashBin.longitude}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.label}>状態:</Text>
-            <Text style={[styles.value, styles.statusActive]}>利用可能</Text>
+            <Text style={styles.label}>ゴミの種類</Text>
+            <Text
+              style={[
+                styles.value,
+                {
+                  color: getCategoryColor(trashBin.trash_category),
+                  fontWeight: '600',
+                },
+              ]}
+            >
+              {trashBin.trash_category}
+            </Text>
           </View>
         </View>
 
