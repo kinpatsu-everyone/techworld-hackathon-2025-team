@@ -127,9 +127,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  mapContainer: {
+    flex: 1,
+  },
   map: {
-    width: '100%',
-    height: '100%',
+    ...StyleSheet.absoluteFillObject,
   },
   errorContainer: {
     flex: 1,
