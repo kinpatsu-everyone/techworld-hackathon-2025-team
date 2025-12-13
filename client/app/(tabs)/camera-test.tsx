@@ -1,126 +1,195 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { StyleSheet, View, Pressable, Text } from 'react-native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Image } from 'expo-image';
-import { Platform, StyleSheet, Pressable, Alert } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-
-import { Collapsible } from '@/components/ui/collapsible';
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+import { ThemedText } from '@/components/themed-text';
 
-export default function TabTwoScreen() {
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+export default function CameraTestScreen() {
+  const [permission, requestPermission] = useCameraPermissions();
+  const [photo, setPhoto] = useState<string | null>(null);
+  const cameraRef = useRef<CameraView>(null);
 
+  // 権限がまだ読み込まれていない
+  if (!permission) {
+    return (
+      <ThemedView style={styles.container}>
+        <ThemedText>カメラ権限を確認中...</ThemedText>
+      </ThemedView>
+    );
+  }
+
+  // 権限がない場合
+  if (!permission.granted) {
+    return (
+      <ThemedView style={styles.container}>
+        <ThemedText style={styles.message}>
+          カメラを使用するには権限が必要です
+        </ThemedText>
+        <Pressable style={styles.button} onPress={requestPermission}>
+          <Text style={styles.buttonText}>権限を許可する</Text>
+        </Pressable>
+      </ThemedView>
+    );
+  }
+
+  // 撮影処理
   const takePhoto = async () => {
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-
-    if (!permissionResult.granted) {
-      Alert.alert(
-        '権限が必要です',
-        '写真を撮るにはカメラへのアクセスを許可してください。'
-      );
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setSelectedImage(result.assets[0].uri);
+    if (cameraRef.current) {
+      const result = await cameraRef.current.takePictureAsync();
+      if (result) {
+        setPhoto(result.uri);
+      }
     }
   };
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }
-    >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}
-        >
-          Camera Test
-        </ThemedText>
-      </ThemedView>
-      {/* 画像選択セクション */}
-      <ThemedView style={styles.imagePickerSection}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.pickButton,
-            pressed && styles.pickButtonPressed,
-          ]}
-          onPress={takePhoto}
-        >
-          <ThemedText style={styles.pickButtonText}>📷 カメラで撮影</ThemedText>
-        </Pressable>
 
-        {selectedImage && (
+  // 撮り直し
+  const retake = () => {
+    setPhoto(null);
+  };
+
+  // 撮影済みの場合はプレビュー表示
+  if (photo) {
+    return (
+      <ThemedView style={styles.container}>
+        <ThemedText type="subtitle" style={styles.title}>
+          撮影結果
+        </ThemedText>
+        <View style={styles.previewContainer}>
           <Image
-            source={{ uri: selectedImage }}
-            style={styles.selectedImage}
+            source={{ uri: photo }}
+            style={styles.preview}
             contentFit="cover"
             contentPosition="center"
           />
-        )}
+        </View>
+        <View style={styles.buttonRow}>
+          <Pressable
+            style={[styles.button, styles.retakeButton]}
+            onPress={retake}
+          >
+            <Text style={styles.buttonText}>撮り直す</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.button, styles.useButton]}
+            onPress={() => {
+              // ここで画像を使う処理
+              alert('この画像を使用します！');
+            }}
+          >
+            <Text style={styles.buttonText}>使用する</Text>
+          </Pressable>
+        </View>
       </ThemedView>
-    </ParallaxScrollView>
+    );
+  }
+
+  // カメラビュー
+  return (
+    <ThemedView style={styles.container}>
+      <ThemedText type="subtitle" style={styles.title}>
+        1:1 カメラ
+      </ThemedText>
+
+      {/* 1:1のカメラプレビュー */}
+      <View style={styles.cameraContainer}>
+        <CameraView ref={cameraRef} style={styles.camera} facing="back" />
+      </View>
+
+      {/* 撮影ボタン */}
+      <Pressable
+        style={({ pressed }) => [
+          styles.captureButton,
+          pressed && styles.captureButtonPressed,
+        ]}
+        onPress={takePhoto}
+      >
+        <View style={styles.captureButtonInner} />
+      </Pressable>
+
+      <ThemedText style={styles.hint}>タップして撮影</ThemedText>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  imagePickerSection: {
-    marginVertical: 16,
+  container: {
+    flex: 1,
     alignItems: 'center',
-    gap: 16,
+    justifyContent: 'center',
+    padding: 20,
   },
-  pickButton: {
+  title: {
+    marginBottom: 20,
+  },
+  message: {
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  cameraContainer: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#000',
+  },
+  camera: {
+    flex: 1,
+  },
+  captureButton: {
+    marginTop: 30,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#fff',
+    borderWidth: 5,
+    borderColor: '#007AFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captureButtonPressed: {
+    transform: [{ scale: 0.95 }],
+    borderColor: '#0056B3',
+  },
+  captureButtonInner: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: '#007AFF',
+  },
+  hint: {
+    marginTop: 16,
+    opacity: 0.6,
+  },
+  previewContainer: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  preview: {
+    flex: 1,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 16,
+    marginTop: 30,
+  },
+  button: {
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: '#007AFF',
   },
-  pickButtonPressed: {
-    backgroundColor: '#0056B3',
-    transform: [{ scale: 0.97 }],
+  retakeButton: {
+    backgroundColor: '#8E8E93',
   },
-  pickButtonText: {
-    color: '#FFFFFF',
+  useButton: {
+    backgroundColor: '#34C759',
+  },
+  buttonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  selectedImage: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 12,
   },
 });
