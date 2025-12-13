@@ -1,0 +1,26 @@
+# Git
+.git
+.gitignore
+
+# Environment files
+.env.local
+
+# Documentation
+README.md
+
+# Build artifacts
+main
+tmp/
+*.test
+*.out
+coverage.*
+
+# Development files
+.air.toml
+Dockerfile.dev
+docker-compose.yaml
+Makefile
+
+# IDE
+.vscode/
+.idea/

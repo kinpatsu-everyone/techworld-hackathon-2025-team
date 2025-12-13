@@ -1,0 +1,275 @@
+{
+  "gemini": {
+    "1": [
+      {
+        "kind": "JSON",
+        "domain": "gemini",
+        "version": 1,
+        "method_name": "GenerateImage",
+        "http_method": "POST",
+        "request_type": "handler.GenerateImageRequest",
+        "response_type": "handler.GenerateImageResponse",
+        "summary": "Generate Image using Gemini 3 Pro Image",
+        "description": "Generates an image from a text prompt using Google Gemini 3 Pro Image API.",
+        "tags": [
+          "AI",
+          "Image"
+        ],
+        "request_type_info": {
+          "name": "GenerateImageRequest",
+          "fields": [
+            {
+              "name": "Prompt",
+              "json_name": "prompt",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            },
+            {
+              "name": "Model",
+              "json_name": "model",
+              "type": "string",
+              "ts_type": "string",
+              "optional": true
+            }
+          ]
+        },
+        "response_type_info": {
+          "name": "GenerateImageResponse",
+          "fields": [
+            {
+              "name": "Candidates",
+              "json_name": "candidates",
+              "type": "[]handler.CandidateResponse",
+              "ts_type": "CandidateResponse[]",
+              "optional": false
+            }
+          ]
+        }
+      },
+      {
+        "kind": "JSON",
+        "domain": "gemini",
+        "version": 1,
+        "method_name": "AnalyzeImage",
+        "http_method": "POST",
+        "request_type": "handler.AnalyzeImageRequest",
+        "response_type": "handler.AnalyzeImageResponse",
+        "summary": "Analyze Image using Gemini",
+        "description": "Analyzes an image with a text prompt and returns text analysis results using Google Gemini API.",
+        "tags": [
+          "AI",
+          "Image",
+          "Analysis"
+        ],
+        "request_type_info": {
+          "name": "AnalyzeImageRequest",
+          "fields": [
+            {
+              "name": "ImageData",
+              "json_name": "image_data",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            },
+            {
+              "name": "MimeType",
+              "json_name": "mime_type",
+              "type": "string",
+              "ts_type": "string",
+              "optional": true
+            },
+            {
+              "name": "Model",
+              "json_name": "model",
+              "type": "string",
+              "ts_type": "string",
+              "optional": true
+            }
+          ]
+        },
+        "response_type_info": {
+          "name": "AnalyzeImageResponse",
+          "fields": [
+            {
+              "name": "Text",
+              "json_name": "text",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            }
+          ]
+        }
+      },
+      {
+        "kind": "FileUpload",
+        "domain": "gemini",
+        "version": 1,
+        "method_name": "AnalyzeAndGenerateImage",
+        "http_method": "POST",
+        "request_type": "handler.AnalyzeAndGenerateImageMultipartRequest",
+        "response_type": "handler.AnalyzeAndGenerateImageResponse",
+        "summary": "Analyze Trash Bin and Generate Monster Character (Multipart)",
+        "description": "Analyzes a trash bin image (sent as multipart/form-data) to determine trash type, then generates a monster character themed on that trash type. The character is animal-motifed and based on the trash bin image. Returns base64 encoded image data.",
+        "tags": [
+          "AI",
+          "Image",
+          "Analysis",
+          "Generation"
+        ],
+        "request_type_info": {
+          "name": "",
+          "fields": null
+        },
+        "response_type_info": {
+          "name": "",
+          "fields": null
+        }
+      }
+    ]
+  },
+  "healthz": {
+    "1": [
+      {
+        "kind": "JSON",
+        "domain": "healthz",
+        "version": 1,
+        "method_name": "Healthz",
+        "http_method": "POST",
+        "request_type": "handler.HealthzRequest",
+        "response_type": "handler.HealthzResponse",
+        "summary": "Health Check Endpoint",
+        "description": "Returns a simple health check response.",
+        "tags": [
+          "Health"
+        ],
+        "request_type_info": {
+          "name": "HealthzRequest",
+          "fields": []
+        },
+        "response_type_info": {
+          "name": "HealthzResponse",
+          "fields": [
+            {
+              "name": "Version",
+              "json_name": "version",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            },
+            {
+              "name": "Status",
+              "json_name": "status",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            },
+            {
+              "name": "Message",
+              "json_name": "message",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "monster": {
+    "1": [
+      {
+        "kind": "FileUpload",
+        "domain": "monster",
+        "version": 1,
+        "method_name": "CreateMonster",
+        "http_method": "POST",
+        "request_type": "handler.CreateMonsterRequest",
+        "response_type": "handler.CreateMonsterResponse",
+        "summary": "Create Monster",
+        "description": "Creates a new monster by analyzing a trash bin image, generating a monster character, and persisting the monster data. Returns the monster ID.",
+        "tags": [
+          "Monster",
+          "AI",
+          "Image"
+        ],
+        "request_type_info": {
+          "name": "",
+          "fields": null
+        },
+        "response_type_info": {
+          "name": "",
+          "fields": null
+        }
+      },
+      {
+        "kind": "JSON",
+        "domain": "monster",
+        "version": 1,
+        "method_name": "GetMonsters",
+        "http_method": "POST",
+        "request_type": "handler.GetMonstersRequest",
+        "response_type": "handler.GetMonstersResponse",
+        "summary": "Get Monsters",
+        "description": "Returns a list of all monsters with their ID, nickname, latitude, longitude, trash category, and image URL.",
+        "tags": [
+          "Monster"
+        ],
+        "request_type_info": {
+          "name": "GetMonstersRequest",
+          "fields": []
+        },
+        "response_type_info": {
+          "name": "GetMonstersResponse",
+          "fields": [
+            {
+              "name": "Monsters",
+              "json_name": "monsters",
+              "type": "[]handler.MonsterItem",
+              "ts_type": "MonsterItem[]",
+              "optional": false
+            }
+          ]
+        }
+      },
+      {
+        "kind": "JSON",
+        "domain": "monster",
+        "version": 1,
+        "method_name": "GetMonster",
+        "http_method": "POST",
+        "request_type": "handler.GetMonsterRequest",
+        "response_type": "handler.GetMonsterResponse",
+        "summary": "Get Monster",
+        "description": "Returns a single monster by ID with its nickname, latitude, longitude, trash category, and image URL.",
+        "tags": [
+          "Monster"
+        ],
+        "request_type_info": {
+          "name": "GetMonsterRequest",
+          "fields": [
+            {
+              "name": "ID",
+              "json_name": "id",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            }
+          ]
+        },
+        "response_type_info": {
+          "name": "GetMonsterResponse",
+          "fields": [
+            {
+              "name": "Monster",
+              "json_name": "monster",
+              "type": "handler.MonsterItem",
+              "ts_type": "MonsterItem",
+              "optional": false
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
