@@ -34,6 +34,20 @@ var (
 
 	// GeminiBaseURL はGoogle Gemini APIのベースURLです
 	GeminiBaseURL = ""
+
+	// GCSBucketName はGCSバケット名です
+	GCSBucketName = ""
+
+	// GCSBaseURL はGCSのベースURLです（カスタムドメインがある場合）
+	GCSBaseURL = ""
+
+	// GCSCredentialsJSON はGCS認証情報のJSON文字列です（オプション、環境変数から読み込む）
+	GCSCredentialsJSON = ""
+
+	// GCSMakePublic はアップロード時にオブジェクトを公開読み取り可能にするかどうかです
+	// trueの場合、公開URLを使用します（誰でもアクセス可能）
+	// falseの場合、署名付きURL（認証済みURL）を使用します（URLを知っている人のみアクセス可能、有効期限あり）
+	GCSMakePublic = true // デフォルトは公開URL方式
 )
 
 type CacheConfig struct {

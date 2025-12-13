@@ -2,10 +2,19 @@ package handler
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"io"
 	"mime/multipart"
+	"strings"
 
+	"github.com/google/uuid"
+	"github.com/kinpatsu-everyone/backend-template/config"
+	"github.com/kinpatsu-everyone/backend-template/enum"
+	"github.com/kinpatsu-everyone/backend-template/internal/gcs"
+	"github.com/kinpatsu-everyone/backend-template/internal/gemini"
 	"github.com/kinpatsu-everyone/backend-template/internal/mysql"
+	"github.com/kinpatsu-everyone/backend-template/pkg/outologger"
 )
 
 // CreateMonsterRequest はMonster登録リクエストです
@@ -30,7 +39,10 @@ func (r CreateMonsterRequest) Validate() error {
 
 // CreateMonsterResponse はMonster登録レスポンスです
 type CreateMonsterResponse struct {
-	MonsterID string `json:"monsterid"` // モンスターID(UUID)
+	MonsterID         string `json:"monsterid"`           // モンスターID(UUID)
+	TrashType         string `json:"trash_type"`          // ごみ種判別結果
+	GeneratedImageURL string `json:"generated_image_url"` // 生成されたモンスター画像のGCS URL
+	OriginalImageURL  string `json:"original_image_url"`  // 元のごみ箱画像のGCS URL
 }
 
 // CreateMonster はMonster登録ハンドラーです
@@ -40,15 +52,221 @@ type CreateMonsterResponse struct {
 // 3. 生成された画像のURLをMonsterのImageurlに保存
 // 4. MonsterのPKをレスポンスで返す
 func CreateMonster(ctx context.Context, req *CreateMonsterRequest) (*CreateMonsterResponse, error) {
-	// TODO: 実装予定
-	// 1. Monsterの永続化処理
-	// 2. AnalyzeAndGenerateImageMultipartの呼び出し
-	// 3. 生成画像のURL保存
-	// 4. MonsterのPKを返す
+	logger := outologger.GetLogger()
+	queries := mysql.GetQueries()
 
-	// 現在はmockデータを返す
+	// 1. Monsterの永続化処理
+	monsterID := uuid.New().String()
+	monsterTrashCategoryID := uuid.New().String()
+
+	// 画像ファイルを開く
+	file, err := req.Image.Open()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open image file: %w", err)
+	}
+	defer file.Close()
+
+	// 画像データを読み込む
+	imageBytes, err := io.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read image data: %w", err)
+	}
+
+	// MIMEタイプを取得
+	mimeType := req.Image.Header.Get("Content-Type")
+	if mimeType == "" {
+		// ファイル名から推測
+		filename := req.Image.Filename
+		if strings.HasSuffix(filename, ".jpg") || strings.HasSuffix(filename, ".jpeg") {
+			mimeType = "image/jpeg"
+		} else if strings.HasSuffix(filename, ".png") {
+			mimeType = "image/png"
+		} else if strings.HasSuffix(filename, ".gif") {
+			mimeType = "image/gif"
+		} else if strings.HasSuffix(filename, ".webp") {
+			mimeType = "image/webp"
+		} else {
+			mimeType = "image/jpeg" // デフォルト
+		}
+	}
+
+	// 緯度・経度をsql.NullStringに変換
+	var latitude, longitude sql.NullString
+	if req.Latitude != 0 {
+		latitude = sql.NullString{String: fmt.Sprintf("%f", req.Latitude), Valid: true}
+	}
+	if req.Longitude != 0 {
+		longitude = sql.NullString{String: fmt.Sprintf("%f", req.Longitude), Valid: true}
+	}
+
+	// 初期状態で空のURLでMonsterを作成（後で更新）
+	_, err = queries.CreateMonster(ctx, mysql.CreateMonsterParams{
+		Monsterid:                monsterID,
+		Nickname:                 req.Nickname,
+		Originaltrashbinimageurl: "", // GCSアップロードは後で実装
+		Generatedmonsterimageurl: "", // GCSアップロードは後で実装
+		Latitude:                 latitude,
+		Longitude:                longitude,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create monster: %w", err)
+	}
+
+	// 2. 画像からゴミ種別を判定
+	// gemini/client.go:149 の AnalyzeTrashBinImage メソッドを利用
+	analysisModel := "gemini-2.5-flash"
+	analysisClient, err := gemini.NewClient(config.GeminiAPIKey, analysisModel)
+	if err != nil {
+		logger.Error(ctx, "failed to create analysis client", map[string]any{
+			"error": err,
+		})
+		return nil, fmt.Errorf("failed to create analysis client: %w", err)
+	}
+
+	logger.Info(ctx, "analyzing trash bin image", map[string]any{
+		"mime_type": mimeType,
+		"filename":  req.Image.Filename,
+		"size":      len(imageBytes),
+	})
+
+	// AnalyzeTrashBinImage を呼び出し（gemini/client.go:149）
+	trashType, _, _, err := analysisClient.AnalyzeTrashBinImage(ctx, imageBytes, mimeType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to analyze image: %w", err)
+	}
+
+	logger.Info(ctx, "trash type determined", map[string]any{
+		"trash_type": trashType,
+	})
+
+	// ゴミ種別の文字列をuint8に変換
+	trashCategory := enum.StringToTrashCategoryEnum(trashType)
+
+	// 3. ゴミ種別をMonstertrashcategoryに保存
+	_, err = queries.CreateMonsterTrashCategory(ctx, mysql.CreateMonsterTrashCategoryParams{
+		Monstertrashcategoryid: monsterTrashCategoryID,
+		Monsterid:              monsterID,
+		Trashcategory:          uint8(trashCategory),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create monster trash category: %w", err)
+	}
+
+	// 4. monsterの画像を生成
+	// gemini/client.go:188 の GenerateMonsterImage メソッドを利用
+	generateModel := "gemini-3-pro-image-preview"
+	generateClient, err := gemini.NewClient(config.GeminiAPIKey, generateModel)
+	if err != nil {
+		logger.Error(ctx, "failed to create generate client", map[string]any{
+			"error": err,
+		})
+		return nil, fmt.Errorf("failed to create generate client: %w", err)
+	}
+
+	logger.Info(ctx, "generating monster image", map[string]any{
+		"model":      generateModel,
+		"trash_type": trashType,
+	})
+
+	// GenerateMonsterImage を呼び出し（gemini/client.go:188）
+	generatedImageData, generatedMimeType, err := generateClient.GenerateMonsterImage(ctx, trashType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate image: %w", err)
+	}
+
+	logger.Info(ctx, "monster image generated", map[string]any{
+		"size":      len(generatedImageData),
+		"mime_type": generatedMimeType,
+	})
+
+	// 5. 生成画像のURL保存（GCSにアップロード・公開URL方式）
+	var generatedImageURL string
+	var originalImageURL string
+
+	if config.GCSBucketName != "" {
+		// GCSクライアントを作成
+		// 認証方法:
+		// - GCS_CREDENTIALS_JSONが設定されている場合: サービスアカウントキーを使用
+		// - GCS_CREDENTIALS_JSONが未設定の場合: Application Default Credentials (ADC) を使用
+		//   ADCは以下の順序で認証情報を探します:
+		//   1. 環境変数 GOOGLE_APPLICATION_CREDENTIALS で指定されたJSONファイル
+		//   2. gcloud CLIの認証情報 (gcloud auth application-default login)
+		//   3. GCE/GKEのサービスアカウント（クラウド環境の場合）
+		var credentialsJSON []byte
+		if config.GCSCredentialsJSON != "" {
+			credentialsJSON = []byte(config.GCSCredentialsJSON)
+		}
+
+		gcsClient, err := gcs.NewClient(ctx, config.GCSBucketName, config.GCSBaseURL, credentialsJSON)
+		if err != nil {
+			logger.Error(ctx, "failed to create GCS client", map[string]any{
+				"error": err,
+			})
+			// GCSクライアントの作成に失敗しても処理は続行（空文字列のまま）
+		} else {
+			defer gcsClient.Close()
+
+			// 生成されたモンスター画像をアップロード（署名付きURL方式）
+			generatedExtension := gcs.GetExtensionFromMimeType(generatedMimeType)
+			generatedObjectPath := gcs.GenerateObjectPath(monsterID, "generated", generatedExtension)
+			// makePublic=false で署名付きURLを取得
+			generatedImageURL, err = gcsClient.UploadImage(ctx, generatedObjectPath, generatedImageData, generatedMimeType, false)
+			if err != nil {
+				logger.Error(ctx, "failed to upload generated image to GCS", map[string]any{
+					"error":       err,
+					"object_path": generatedObjectPath,
+				})
+				generatedImageURL = ""
+			} else {
+				logger.Info(ctx, "generated image uploaded to GCS", map[string]any{
+					"url":         generatedImageURL,
+					"object_path": generatedObjectPath,
+					"url_type":    "signed",
+				})
+			}
+
+			// 元のゴミ箱画像をアップロード（署名付きURL方式）
+			originalExtension := gcs.GetExtensionFromMimeType(mimeType)
+			originalObjectPath := gcs.GenerateObjectPath(monsterID, "original", originalExtension)
+			// makePublic=false で署名付きURLを取得
+			originalImageURL, err = gcsClient.UploadImage(ctx, originalObjectPath, imageBytes, mimeType, false)
+			if err != nil {
+				logger.Error(ctx, "failed to upload original image to GCS", map[string]any{
+					"error":       err,
+					"object_path": originalObjectPath,
+				})
+				originalImageURL = ""
+			} else {
+				logger.Info(ctx, "original image uploaded to GCS", map[string]any{
+					"url":         originalImageURL,
+					"object_path": originalObjectPath,
+					"url_type":    "signed",
+				})
+			}
+		}
+	} else {
+		logger.Info(ctx, "GCS bucket name not configured, skipping image upload", nil)
+	}
+
+	// Monsterの画像URLを更新
+	_, err = queries.UpdateMonster(ctx, mysql.UpdateMonsterParams{
+		Nickname:                 req.Nickname,
+		Originaltrashbinimageurl: originalImageURL,
+		Generatedmonsterimageurl: generatedImageURL,
+		Latitude:                 latitude,
+		Longitude:                longitude,
+		Monsterid:                monsterID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to update monster with image URLs: %w", err)
+	}
+
+	// 6. MonsterのPKとURLを返す
 	return &CreateMonsterResponse{
-		MonsterID: "00000000-0000-0000-0000-000000000001", // mock UUID
+		MonsterID:         monsterID,
+		TrashType:         trashType,
+		GeneratedImageURL: generatedImageURL,
+		OriginalImageURL:  originalImageURL,
 	}, nil
 }
 

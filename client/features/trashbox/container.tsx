@@ -1,6 +1,9 @@
+import { useState } from 'react';
+import { Alert } from 'react-native';
 import { router } from 'expo-router';
 import { TrashboxPresentational } from './presentational';
 import { useCamera } from './hooks/useCamera';
+import { createMonster } from '@/lib/client';
 
 export const TrashboxContainer = () => {
   const {
@@ -15,19 +18,45 @@ export const TrashboxContainer = () => {
     retake,
     reset,
   } = useCamera();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleRegister = () => {
-    console.log('=== ゴミ箱登録データ ===');
-    console.log('写真URI:', photo);
-    console.log('位置情報:', location);
-    console.log('説明:', description);
-    console.log('========================');
+  const handleRegister = async () => {
+    if (!photo || !location) {
+      Alert.alert('エラー', '写真と位置情報が必要です');
+      return;
+    }
 
-    // TODO: APIに送信して、返ってきたIDで遷移
-    const mockMonsterId = '1';
+    if (!description.trim()) {
+      Alert.alert('エラー', 'ニックネームを入力してください');
+      return;
+    }
 
-    reset();
-    router.push(`/monsters/${mockMonsterId}`);
+    setIsSubmitting(true);
+
+    console.log('=== 送信データ ===');
+    console.log('nickname:', description);
+    console.log('latitude:', location.latitude);
+    console.log('longitude:', location.longitude);
+    console.log('imageUri:', photo);
+    console.log('==================');
+
+    try {
+      const response = await createMonster({
+        nickname: description,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        imageUri: photo,
+      });
+
+      reset();
+      router.push(`/monsters/${response.data.monsterid}`);
+    } catch (error) {
+      console.error('モンスター登録エラー:', error);
+      console.error('エラー詳細:', JSON.stringify(error, null, 2));
+      Alert.alert('エラー', `登録に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

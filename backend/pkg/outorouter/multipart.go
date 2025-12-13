@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"reflect"
+	"strconv"
 )
 
 type MultipartHandlerFunc[Req RequestObject, Res ResponseObject] func(ctx context.Context, req *Req) (*Res, error)
@@ -94,6 +96,18 @@ func RegisterMultipartEndpoint[Req RequestObject, Res any](
 		}
 		defer req.MultipartForm.RemoveAll()
 
+		// デバッグログ: フォームデータの内容を出力
+		slog.Info("multipart form data received",
+			"values", req.MultipartForm.Value,
+			"file_keys", func() []string {
+				keys := make([]string, 0, len(req.MultipartForm.File))
+				for k := range req.MultipartForm.File {
+					keys = append(keys, k)
+				}
+				return keys
+			}(),
+		)
+
 		// リクエスト構造体を作成
 		var request Req
 		reqType := reflect.TypeOf(request)
@@ -102,14 +116,17 @@ func RegisterMultipartEndpoint[Req RequestObject, Res any](
 		if hasFields {
 			// リクエスト構造体のフィールドをmultipart/form-dataから埋める
 			if err := populateRequestFromMultipart(&request, req.MultipartForm); err != nil {
+				slog.Error("populateRequestFromMultipart failed", "error", err)
 				w.Header().Set("Content-Type", "application/json")
 				http.Error(w, fmt.Sprintf("リクエストのパースに失敗しました: %v", err), http.StatusBadRequest)
 				return
 			}
+			slog.Info("request populated", "request", fmt.Sprintf("%+v", request))
 		}
 
 		// Validate request if Validate method exists
 		if err := request.Validate(); err != nil {
+			slog.Error("validation failed", "error", err)
 			w.Header().Set("Content-Type", "application/json")
 			http.Error(w, fmt.Sprintf("リクエストのバリデーションに失敗しました: %v", err), http.StatusBadRequest)
 			return
@@ -204,27 +221,25 @@ func populateRequestFromMultipart(req interface{}, form *multipart.Form) error {
 		field := reqType.Field(i)
 		fieldValue := reqValue.Field(i)
 
-		// JSONタグからフィールド名を取得
-		jsonTag := field.Tag.Get("json")
-		if jsonTag == "" || jsonTag == "-" {
-			continue
-		}
-
-		// JSONタグからフィールド名を抽出（例: "image_data,omitempty" -> "image_data"）
-		fieldName := jsonTag
-		if idx := len(jsonTag); idx > 0 {
+		// multipartタグを優先、なければjsonタグを使用
+		fieldName := ""
+		multipartTag := field.Tag.Get("multipart")
+		if multipartTag != "" && multipartTag != "-" {
+			fieldName = multipartTag
+		} else {
+			// JSONタグからフィールド名を取得
+			jsonTag := field.Tag.Get("json")
+			if jsonTag == "" || jsonTag == "-" {
+				continue
+			}
+			// JSONタグからフィールド名を抽出（例: "image_data,omitempty" -> "image_data"）
+			fieldName = jsonTag
 			for i, r := range jsonTag {
 				if r == ',' {
 					fieldName = jsonTag[:i]
 					break
 				}
 			}
-		}
-
-		// multipartタグも確認
-		multipartTag := field.Tag.Get("multipart")
-		if multipartTag != "" {
-			fieldName = multipartTag
 		}
 
 		// ファイルフィールドかどうかを判定
@@ -244,25 +259,38 @@ func populateRequestFromMultipart(req interface{}, form *multipart.Form) error {
 		} else {
 			// 通常のテキストフィールド
 			if values, ok := form.Value[fieldName]; ok && len(values) > 0 {
-				// 文字列フィールドの場合
-				if fieldValue.Kind() == reflect.String {
-					fieldValue.SetString(values[0])
-				} else if fieldValue.Kind() == reflect.Slice && fieldValue.Type().Elem().Kind() == reflect.String {
-					// 文字列スライスの場合
-					fieldValue.Set(reflect.ValueOf(values))
-				} else {
+				value := values[0]
+				switch fieldValue.Kind() {
+				case reflect.String:
+					fieldValue.SetString(value)
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+					if intVal, err := strconv.ParseInt(value, 10, 64); err == nil {
+						fieldValue.SetInt(intVal)
+					}
+				case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+					if uintVal, err := strconv.ParseUint(value, 10, 64); err == nil {
+						fieldValue.SetUint(uintVal)
+					}
+				case reflect.Float32, reflect.Float64:
+					if floatVal, err := strconv.ParseFloat(value, 64); err == nil {
+						fieldValue.SetFloat(floatVal)
+					}
+				case reflect.Bool:
+					if boolVal, err := strconv.ParseBool(value); err == nil {
+						fieldValue.SetBool(boolVal)
+					}
+				case reflect.Slice:
+					if fieldValue.Type().Elem().Kind() == reflect.String {
+						fieldValue.Set(reflect.ValueOf(values))
+					}
+				default:
 					// JSON文字列としてパースを試みる
-					if len(values[0]) > 0 && (values[0][0] == '{' || values[0][0] == '[') {
-						if err := json.Unmarshal([]byte(values[0]), fieldValue.Addr().Interface()); err != nil {
+					if len(value) > 0 && (value[0] == '{' || value[0] == '[') {
+						if err := json.Unmarshal([]byte(value), fieldValue.Addr().Interface()); err != nil {
 							// JSONパースに失敗した場合は文字列として扱う
 							if fieldValue.Kind() == reflect.String {
-								fieldValue.SetString(values[0])
+								fieldValue.SetString(value)
 							}
-						}
-					} else {
-						// 文字列として設定
-						if fieldValue.Kind() == reflect.String {
-							fieldValue.SetString(values[0])
 						}
 					}
 				}
