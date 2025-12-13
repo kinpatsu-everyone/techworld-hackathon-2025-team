@@ -110,7 +110,7 @@ export function MonsterDetailPresentational({
         {isFromRegister && (
           <Pressable
             style={styles.listButton}
-            onPress={() => router.push('/monsters')}
+            onPress={() => router.replace('/monsters')}
           >
             <Text style={styles.listButtonText}>ゴミスター一覧を見る</Text>
           </Pressable>

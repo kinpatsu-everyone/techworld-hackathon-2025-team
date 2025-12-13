@@ -27,7 +27,7 @@ export const TrashboxContainer = () => {
     const mockMonsterId = '1';
 
     reset();
-    router.push(`/monsters/${mockMonsterId}?fromRegister=true`);
+    router.replace(`/monsters/${mockMonsterId}?fromRegister=true`);
   };
 
   return (
