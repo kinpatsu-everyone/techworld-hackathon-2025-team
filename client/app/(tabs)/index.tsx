@@ -5,7 +5,6 @@ import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Link } from "expo-router";
-import MapView from "react-native-maps";
 
 export default function HomeScreen() {
   return (
@@ -16,8 +15,8 @@ export default function HomeScreen() {
           source={require("@/assets/images/partial-react-logo.png")}
           style={styles.reactLogo}
         />
-      }>
-      <MapView style={styles.map} />
+      }
+    >
       <ThemedView style={styles.titleContainer}></ThemedView>
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Step 1: Try it</ThemedText>
@@ -100,10 +99,5 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     position: "absolute",
-  },
-  map: {
-    width: "100%",
-    height: "100%",
-    marginBottom: 16,
   },
 });
