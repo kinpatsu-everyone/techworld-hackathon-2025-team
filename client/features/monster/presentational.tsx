@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   },
   listButton: {
     width: '100%',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#34C759',
     paddingVertical: 16,
     borderRadius: 14,
     alignItems: 'center',
