@@ -1,0 +1,54 @@
+# =============================================================================
+# Build Stage
+# =============================================================================
+FROM golang:1.25.5-alpine AS builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates tzdata
+
+# Copy dependency files first for better cache utilization
+COPY go.mod go.sum ./
+RUN go mod download && go mod verify
+
+# Copy source code
+COPY . .
+
+# Build with optimizations
+# -ldflags:
+#   -s: Strip symbol table
+#   -w: Strip DWARF debugging info
+#   -extldflags '-static': Force static linking
+ARG VERSION=dev
+ARG COMMIT_SHA=unknown
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-s -w -X main.Version=${VERSION} -X main.CommitSHA=${COMMIT_SHA}" \
+    -trimpath \
+    -o /app/server \
+    ./cmd/main.go
+
+# =============================================================================
+# Runtime Stage - Using distroless for minimal attack surface
+# =============================================================================
+FROM gcr.io/distroless/static-debian12:nonroot
+
+# Copy timezone data and CA certificates from builder
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+# Copy the binary
+COPY --from=builder /app/server /server
+
+# Use non-root user (provided by distroless:nonroot)
+USER nonroot:nonroot
+
+# Expose the application port
+EXPOSE 8080
+
+# Health check endpoint for container orchestrators
+# Note: distroless doesn't have curl/wget, so healthcheck is done via AppRun probe
+# HEALTHCHECK is not available in distroless, use orchestrator-level health checks
+
+# Run the application
+ENTRYPOINT ["/server"]
