@@ -16,11 +16,12 @@ const (
 
 // FieldInfo はGoの構造体フィールドの情報を保持します
 type FieldInfo struct {
-	Name     string `json:"name"`
-	JSONName string `json:"json_name"`
-	Type     string `json:"type"`
-	TSType   string `json:"ts_type"`
-	Optional bool   `json:"optional"`
+	Name       string    `json:"name"`
+	JSONName   string    `json:"json_name"`
+	Type       string    `json:"type"`
+	TSType     string    `json:"ts_type"`
+	Optional   bool      `json:"optional"`
+	NestedType *TypeInfo `json:"nested_type,omitempty"` // ネストされた構造体の型情報
 }
 
 // TypeInfo は構造体の型情報を保持します

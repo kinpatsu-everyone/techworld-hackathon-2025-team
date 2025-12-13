@@ -60,11 +60,12 @@ type Endpoint interface {
 
 // FieldInfo はGoの構造体フィールドの情報を保持します（コード生成用）
 type FieldInfo struct {
-	Name     string `json:"name"`      // Goのフィールド名
-	JSONName string `json:"json_name"` // JSONタグの名前
-	Type     string `json:"type"`      // Goの型名
-	TSType   string `json:"ts_type"`   // TypeScriptの型名
-	Optional bool   `json:"optional"`  // omitemptyの有無
+	Name       string    `json:"name"`                  // Goのフィールド名
+	JSONName   string    `json:"json_name"`             // JSONタグの名前
+	Type       string    `json:"type"`                  // Goの型名
+	TSType     string    `json:"ts_type"`               // TypeScriptの型名
+	Optional   bool      `json:"optional"`              // omitemptyの有無
+	NestedType *TypeInfo `json:"nested_type,omitempty"` // ネストされた構造体の型情報（構造体またはスライス/配列の要素が構造体の場合）
 }
 
 // TypeInfo は構造体の型情報を保持します

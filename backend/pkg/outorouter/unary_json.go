@@ -153,6 +153,13 @@ func RegisterUnaryJSONEndpoint[Req RequestObject, Res any](
 
 // extractTypeInfo はGoの型からTypeInfoを抽出します
 func extractTypeInfo(t reflect.Type) TypeInfo {
+	visited := make(map[reflect.Type]bool)
+	return extractTypeInfoRecursive(t, visited)
+}
+
+// extractTypeInfoRecursive はGoの型からTypeInfoを再帰的に抽出します
+// visitedは循環参照を防ぐために使用します
+func extractTypeInfoRecursive(t reflect.Type, visited map[reflect.Type]bool) TypeInfo {
 	// ポインタの場合は要素型を取得
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
@@ -167,6 +174,12 @@ func extractTypeInfo(t reflect.Type) TypeInfo {
 	if t.Kind() != reflect.Struct {
 		return info
 	}
+
+	// 循環参照チェック
+	if visited[t] {
+		return info
+	}
+	visited[t] = true
 
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
@@ -193,10 +206,55 @@ func extractTypeInfo(t reflect.Type) TypeInfo {
 			Optional: optional,
 		}
 
+		// ネストされた構造体の型情報を抽出
+		nestedType := extractNestedTypeInfo(field.Type, visited)
+		if nestedType != nil {
+			fieldInfo.NestedType = nestedType
+		}
+
 		info.Fields = append(info.Fields, fieldInfo)
 	}
 
 	return info
+}
+
+// extractNestedTypeInfo はフィールドの型からネストされた構造体の型情報を抽出します
+func extractNestedTypeInfo(t reflect.Type, visited map[reflect.Type]bool) *TypeInfo {
+	// ポインタの場合は要素型を取得
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	// スライスまたは配列の場合は要素型を取得
+	if t.Kind() == reflect.Slice || t.Kind() == reflect.Array {
+		t = t.Elem()
+		// 要素がポインタの場合はさらに要素型を取得
+		if t.Kind() == reflect.Ptr {
+			t = t.Elem()
+		}
+	}
+
+	// 構造体の場合のみ型情報を抽出
+	if t.Kind() == reflect.Struct {
+		// time.Time などの標準ライブラリの型はスキップ
+		if t.PkgPath() == "time" {
+			return nil
+		}
+		// multipart.FileHeader などのmime/multipartパッケージの型はスキップ
+		if t.PkgPath() == "mime/multipart" {
+			return nil
+		}
+
+		// 循環参照チェック
+		if visited[t] {
+			return nil
+		}
+
+		typeInfo := extractTypeInfoRecursive(t, visited)
+		return &typeInfo
+	}
+
+	return nil
 }
 
 // parseJSONTag はJSONタグを解析してフィールド名とomitemptyの有無を返します
