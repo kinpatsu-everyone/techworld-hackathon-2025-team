@@ -13,8 +13,8 @@ export default function RootLayout() {
           options={{ presentation: 'modal', title: 'Modal' }}
         />
         <Stack.Screen
-          name="trash-register"
-          options={{ title: 'ゴミ箱登録', presentation: 'modal' }}
+          name="trash/register"
+          options={{ title: 'ゴミ箱を撮影' }}
         />
       </Stack>
       <StatusBar style="auto" />
