@@ -67,10 +67,13 @@ export const TrashboxPresentational = ({
 
   // カメラビュー
   return (
-    <View style={styles.container}>
+    <View style={styles.cameraContainer}>
+      <View style={styles.spacer} />
       <CameraViewWithScope ref={cameraRef} />
-      <Text style={styles.subtitle}>ゴミ箱が写るように撮影してください</Text>
-      <CaptureButton onPress={onTakePhoto} />
+      <View style={styles.footer}>
+        <Text style={styles.subtitle}>ゴミ箱が写るように撮影してください</Text>
+        <CaptureButton onPress={onTakePhoto} />
+      </View>
     </View>
   );
 };
@@ -83,6 +86,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     padding: 20,
   },
+  cameraContainer: {
+    height: '100%',
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  spacer: {
+    flexGrow: 1,
+  },
+  footer: {
+    flexGrow: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    gap: 16,
+    alignItems: 'center',
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -93,12 +116,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.light.text,
     textAlign: 'center',
-    marginBottom: 20,
   },
   button: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#007AFF',
     backgroundColor: '#007AFF',
   },
   buttonText: {
