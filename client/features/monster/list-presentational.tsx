@@ -8,19 +8,13 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-
+import { MonsterItem } from '@/lib/client';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_MARGIN = 8;
 const CARD_WIDTH = (SCREEN_WIDTH - 12 * 2 - CARD_MARGIN * 4) / 2;
 
-type MonsterListItem = {
-  id: string;
-  name: string;
-  monsterImage: string;
-};
-
 type Props = {
-  monsters: MonsterListItem[];
+  monsters: MonsterItem[];
 };
 
 export const MonsterListPresentational = ({ monsters }: Props) => {
@@ -37,12 +31,12 @@ export const MonsterListPresentational = ({ monsters }: Props) => {
             onPress={() => router.push(`/monsters/${item.id}`)}
           >
             <Image
-              source={{ uri: item.monsterImage }}
+              source={{ uri: item.image_url }}
               style={styles.image}
               contentFit="cover"
             />
             <Text style={styles.name} numberOfLines={1}>
-              {item.name}
+              {item.nickname}
             </Text>
           </Pressable>
         )}
