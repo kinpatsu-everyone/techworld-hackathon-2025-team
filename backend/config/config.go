@@ -106,6 +106,11 @@ func LoadEnv(ctx context.Context) {
 	if RedisConfig.KeyPrefix == "" {
 		RedisConfig.KeyPrefix = "app"
 	}
+
+	// GCS設定（オプション）
+	GCSBucketName = os.Getenv("GCS_BUCKET_NAME")
+	GCSBaseURL = os.Getenv("GCS_BASE_URL")
+	GCSCredentialsJSON = os.Getenv("GCS_CREDENTIALS_JSON")
 }
 
 func defaultString(value, def string) string {

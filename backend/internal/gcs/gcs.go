@@ -106,6 +106,37 @@ func (c *Client) UploadImage(ctx context.Context, objectPath string, imageData [
 	return signedURL, nil
 }
 
+// UploadImageWithPath は画像データをGCSにアップロードし、オブジェクトパスを返します
+// objectPath: GCS内のオブジェクトパス（例: "monsters/{uuid}/original.jpg"）
+// imageData: アップロードする画像データ
+// mimeType: 画像のMIMEタイプ（例: "image/jpeg", "image/png"）
+// 戻り値: アップロードしたオブジェクトパス（入力と同じ）
+func (c *Client) UploadImageWithPath(ctx context.Context, objectPath string, imageData []byte, mimeType string) (string, error) {
+	if c.bucketName == "" {
+		return "", fmt.Errorf("bucket name is required")
+	}
+
+	bucket := c.client.Bucket(c.bucketName)
+	obj := bucket.Object(objectPath)
+
+	// オブジェクトの書き込み
+	writer := obj.NewWriter(ctx)
+	writer.ContentType = mimeType
+	writer.CacheControl = "public, max-age=31536000" // 1年間キャッシュ
+
+	// 画像データを書き込む
+	if _, err := writer.Write(imageData); err != nil {
+		writer.Close()
+		return "", fmt.Errorf("failed to write image data: %w", err)
+	}
+
+	if err := writer.Close(); err != nil {
+		return "", fmt.Errorf("failed to close writer: %w", err)
+	}
+
+	return objectPath, nil
+}
+
 // UploadImageFromReader はio.Readerから画像データを読み込んでGCSにアップロードします
 // objectPath: GCS内のオブジェクトパス
 // reader: 画像データを読み込むReader
@@ -228,4 +259,20 @@ func (c *Client) GetSignedURL(ctx context.Context, objectPath string, expiration
 	}
 
 	return url, nil
+}
+
+// GenerateOriginalImagePath はモンスターIDから元画像のGCSオブジェクトパスを生成します
+// monsterID: モンスターID（UUID）
+// extension: ファイル拡張子（例: "jpg", "png"）
+// 戻り値: GCSオブジェクトパス（例: "monsters/{uuid}/original.jpg"）
+func GenerateOriginalImagePath(monsterID, extension string) string {
+	return GenerateObjectPath(monsterID, "original", extension)
+}
+
+// GenerateGeneratedImagePath はモンスターIDから生成画像のGCSオブジェクトパスを生成します
+// monsterID: モンスターID（UUID）
+// extension: ファイル拡張子（例: "jpg", "png"）
+// 戻り値: GCSオブジェクトパス（例: "monsters/{uuid}/generated.jpg"）
+func GenerateGeneratedImagePath(monsterID, extension string) string {
+	return GenerateObjectPath(monsterID, "generated", extension)
 }
