@@ -60,6 +60,7 @@ export const TrashboxPresentational = ({
       <PhotoPreview
         photoUri={photo}
         description={description}
+        isLoading={isSubmitting}
         onDescriptionChange={onDescriptionChange}
         onRetake={onRetake}
         onRegister={onRegister}

@@ -367,6 +367,27 @@
               "type": "string",
               "ts_type": "string",
               "optional": false
+            },
+            {
+              "name": "TrashType",
+              "json_name": "trash_type",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            },
+            {
+              "name": "GeneratedImageURL",
+              "json_name": "generated_image_url",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            },
+            {
+              "name": "OriginalImageURL",
+              "json_name": "original_image_url",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
             }
           ]
         }
@@ -529,6 +550,20 @@
                   }
                 ]
               }
+            },
+            {
+              "name": "OriginalImageURL",
+              "json_name": "original_image_url",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            },
+            {
+              "name": "GeneratedImageURL",
+              "json_name": "generated_image_url",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
             }
           ]
         }

@@ -33,32 +33,25 @@ export const TrashboxContainer = () => {
 
     setIsSubmitting(true);
 
-    console.log('=== 送信データ ===');
-    console.log('nickname:', description);
-    console.log('latitude:', location.latitude);
-    console.log('longitude:', location.longitude);
-    console.log('imageUri:', photo);
-    console.log('==================');
-
     try {
       const response = await createMonster({
         nickname: description,
         latitude: location.latitude,
         longitude: location.longitude,
-        imageUri: photo,
+        image: photo,
       });
 
       reset();
       router.push(`/monsters/${response.data.monsterid}`);
     } catch (error) {
       console.error('モンスター登録エラー:', error);
-      console.error('エラー詳細:', JSON.stringify(error, null, 2));
-      Alert.alert('エラー', `登録に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+      Alert.alert(
+        'エラー',
+        `登録に失敗しました: ${error instanceof Error ? error.message : String(error)}`
+      );
     } finally {
       setIsSubmitting(false);
     }
-    reset();
-    router.replace(`/monsters/${mockMonsterId}?fromRegister=true`);
   };
 
   return (
@@ -67,6 +60,7 @@ export const TrashboxContainer = () => {
       requestPermission={requestPermission}
       photo={photo}
       description={description}
+      isSubmitting={isSubmitting}
       onDescriptionChange={setDescription}
       cameraRef={cameraRef}
       onTakePhoto={takePhoto}

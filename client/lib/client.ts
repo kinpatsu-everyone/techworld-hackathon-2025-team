@@ -173,6 +173,9 @@ export interface CreateMonsterRequest {
 /** Create Monster - Response */
 export interface CreateMonsterResponse {
   monsterid: string;
+  trash_type: string;
+  generated_image_url: string;
+  original_image_url: string;
 }
 
 /** Get Monster - Request */
@@ -183,6 +186,8 @@ export interface GetMonsterRequest {
 /** Get Monster - Response */
 export interface GetMonsterResponse {
   monster: MonsterItem;
+  original_image_url: string;
+  generated_image_url: string;
 }
 
 /** Get Monsters - Request */
@@ -394,7 +399,7 @@ export const apiCallers = {
 
 /**
  * API client for multipart/form-data requests.
- * Used for file uploads (e.g., CreateMonster with image).
+ * Used for file uploads.
  */
 export async function apiMultipart<T>(
   endpoint: string,
@@ -408,7 +413,7 @@ export async function apiMultipart<T>(
   const url = `${config.baseUrl ?? DEFAULT_BASE_URL}${endpoint}`;
 
   const fetchOptions: RequestInit = {
-    method: "POST",
+    method: 'POST',
     headers: {
       ...config.headers,
       ...options?.headers,
@@ -429,7 +434,7 @@ export async function apiMultipart<T>(
 
     const apiError = new ApiError(
       response.status,
-      errorData?.error?.error ?? "UNKNOWN_ERROR",
+      errorData?.error?.error ?? 'UNKNOWN_ERROR',
       errorData?.error?.message ?? response.statusText,
       response
     );
@@ -457,29 +462,50 @@ export async function apiMultipart<T>(
 }
 
 // ============================================================================
-// CreateMonster Helper (Multipart)
+// Multipart Helper Functions
 // ============================================================================
+
+export interface AnalyzeAndGenerateImageParams {
+  image: string; // File URI (e.g., "file:///path/to/photo.jpg")
+  model: string;
+}
+
+/**
+ * Analyze Trash Bin and Generate Monster Character (Multipart)
+ * Uploads files using multipart/form-data.
+ */
+export async function analyzeAndGenerateImage(
+  params: AnalyzeAndGenerateImageParams,
+  options?: {
+    headers?: Record<string, string>;
+    signal?: AbortSignal;
+  }
+): Promise<ApiResponse<AnalyzeAndGenerateImageResponse>> {
+  const formData = new FormData();
+  formData.append('image', {
+    uri: params.image,
+    type: 'image/jpeg',
+    name: 'photo.jpg',
+  } as unknown as Blob);
+  formData.append('model', String(params.model));
+
+  return apiMultipart<AnalyzeAndGenerateImageResponse>(
+    Endpoints.AnalyzeAndGenerateImage,
+    formData,
+    options
+  );
+}
 
 export interface CreateMonsterParams {
   nickname: string;
   latitude: number;
   longitude: number;
-  imageUri: string;
+  image: string; // File URI (e.g., "file:///path/to/photo.jpg")
 }
 
 /**
- * Creates a new monster by uploading an image and location data.
- *
- * @example
- * ```typescript
- * const response = await createMonster({
- *   nickname: "ペットボトルモンスター",
- *   latitude: 35.6762,
- *   longitude: 139.6503,
- *   imageUri: "file:///path/to/photo.jpg",
- * });
- * console.log(response.data.monsterid);
- * ```
+ * Create Monster
+ * Uploads files using multipart/form-data.
  */
 export async function createMonster(
   params: CreateMonsterParams,
@@ -489,13 +515,13 @@ export async function createMonster(
   }
 ): Promise<ApiResponse<CreateMonsterResponse>> {
   const formData = new FormData();
-  formData.append("nickname", params.nickname);
-  formData.append("latitude", String(params.latitude));
-  formData.append("longitude", String(params.longitude));
-  formData.append("image", {
-    uri: params.imageUri,
-    type: "image/jpeg",
-    name: "photo.jpg",
+  formData.append('nickname', String(params.nickname));
+  formData.append('latitude', String(params.latitude));
+  formData.append('longitude', String(params.longitude));
+  formData.append('image', {
+    uri: params.image,
+    type: 'image/jpeg',
+    name: 'photo.jpg',
   } as unknown as Blob);
 
   return apiMultipart<CreateMonsterResponse>(
