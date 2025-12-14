@@ -1,13 +1,15 @@
-import { StyleSheet, View, FlatList, Dimensions } from 'react-native';
+import { StyleSheet, View, Text, Pressable, Dimensions } from 'react-native';
+import { Image } from 'expo-image';
+import { router } from 'expo-router';
 import { Colors } from '@/constants/theme';
-import { MonsterCard } from './monster-card';
+import { TRASH_TYPE_COLORS } from '@/constants/trash';
 import type { TrashType } from './types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_MARGIN = 8;
 const CARD_WIDTH = (SCREEN_WIDTH - 12 * 2 - CARD_MARGIN * 4) / 2;
 
-type MonsterListItem = {
+type MonsterCard = {
   id: string;
   name: string;
   monsterImage: string;
@@ -15,40 +17,34 @@ type MonsterListItem = {
 };
 
 type Props = {
-  monsters: MonsterListItem[];
+  monster: MonsterCard;
 };
 
-export const MonsterListPresentational = ({ monsters }: Props) => {
+export const MonsterCard = ({ monster }: Props) => {
+  const colors = monster.trashTypes.map(
+    (trashType) => TRASH_TYPE_COLORS[trashType]
+  );
+  const firstColor = colors[0];
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={monsters}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        numColumns={2}
-        renderItem={({ item }) => (
-          <MonsterCard
-            monster={{
-              id: item.id,
-              name: item.name,
-              monsterImage: item.monsterImage,
-              trashTypes: item.trashTypes,
-            }}
-          />
-        )}
+    <Pressable
+      style={[styles.card, { shadowColor: firstColor }]}
+      onPress={() => router.push(`/monsters/${monster.id}`)}
+    >
+      <Image
+        source={{ uri: monster.monsterImage }}
+        style={[styles.image, { borderColor: firstColor }]}
+        contentFit="cover"
       />
-    </View>
+      <View style={[styles.nameContainer, { backgroundColor: firstColor }]}>
+        <Text style={styles.name} numberOfLines={1}>
+          {monster.name}
+        </Text>
+      </View>
+    </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  listContent: {
-    padding: 12,
-  },
   card: {
     width: CARD_WIDTH,
     margin: CARD_MARGIN,
@@ -66,11 +62,9 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
     borderRadius: 999,
     borderWidth: 4,
-    borderColor: Colors.light.text,
     marginBottom: 12,
   },
   nameContainer: {
-    backgroundColor: Colors.light.text,
     borderRadius: 8,
     marginTop: -44,
   },
