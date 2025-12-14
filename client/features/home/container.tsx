@@ -3,17 +3,17 @@ import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { HomePresentational } from './presentational';
 import { useLocation } from './hooks/useLocation';
 import { useApi } from '@/hooks/use-api';
-import { MonsterItem } from '@/lib/client';
+import { MonsterItem, TrashItem } from '@/lib/client';
 
 export const HomeContainer = () => {
   const { location, errorMsg } = useLocation();
-  const [trashBins, setTrashBins] = useState<MonsterItem[]>([]);
+  const [trashBins, setTrashBins] = useState<TrashItem[]>([]);
 
-  const { data, isLoading } = useApi('/monster/v1/GetMonsters', {});
+  const { data, isLoading } = useApi('/trash/v1/GetTrashs', {});
 
   useEffect(() => {
     if (data) {
-      setTrashBins(data.monsters);
+      setTrashBins(data.trashs);
     }
   }, [data]);
 

@@ -44,12 +44,10 @@ const AnalyzeTrashBinPrompt = `この画像に写っているゴミ箱を分析�
 
 // GenerateTrashMonsterPromptTemplate は分別種をテーマにしたモンスターキャラクター生成用のプロンプトテンプレートです
 // %s には分別種が入ります
-const GenerateTrashMonsterPromptTemplate = `この写真のゴミ箱をファンタジーなモンスターにしてください。
+const GenerateTrashMonsterPromptTemplate = `この写真のゴミ箱をリアルなモンスターにしてください。
 
 以下の条件を守ってください：
 ・日本文化をモチーフにした動物や妖怪・幻獣など
 ・分別種「%s」をテーマにしたデザイン
-
-キャラクターの特徴：
-- 分別種「%s」に関連する色や要素を取り入れる
+・全く新しい画像ではなく、既存の写真のゴミ箱をそのままモンスターに生まれ変わらせること。
 `

@@ -20,7 +20,7 @@ import {
   matchesTrashFilter,
 } from './components/FilterMenu';
 import { TrashPlot } from '@/components/trash-plot';
-import { MonsterItem } from '@/lib/client';
+import { MonsterItem, TrashItem } from '@/lib/client';
 
 // 現在位置マーカーを別コンポーネントに分離してメモ化
 const CurrentLocationMarker = memo(function CurrentLocationMarker({
@@ -74,7 +74,7 @@ const CurrentLocationMarker = memo(function CurrentLocationMarker({
 interface HomePresentationalProps {
   location: Location.LocationObject | null;
   errorMsg: string | null;
-  trashBins: MonsterItem[];
+  trashBins: TrashItem[];
 }
 
 export const HomePresentational = ({
@@ -82,7 +82,7 @@ export const HomePresentational = ({
   errorMsg,
   trashBins,
 }: HomePresentationalProps) => {
-  const [selectedTrashBin, setSelectedTrashBin] = useState<MonsterItem | null>(
+  const [selectedTrashBin, setSelectedTrashBin] = useState<TrashItem | null>(
     null
   );
   const [modalVisible, setModalVisible] = useState(false);
