@@ -2,15 +2,11 @@ import { StyleSheet, View, FlatList, Dimensions } from 'react-native';
 import { Colors } from '@/constants/theme';
 import { MonsterCard } from './monster-card';
 import { MonsterItem } from '@/lib/client';
+import { TrashType } from './types';
+import { TRASH_TYPE_COLORS } from '@/constants/trash';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_MARGIN = 8;
 const CARD_WIDTH = (SCREEN_WIDTH - 12 * 2 - CARD_MARGIN * 4) / 2;
-
-type MonsterListItem = {
-  id: string;
-  name: string;
-  monsterImage: string;
-};
 
 type Props = {
   monsters: MonsterItem[];
@@ -28,9 +24,9 @@ export const MonsterListPresentational = ({ monsters }: Props) => {
           <MonsterCard
             monster={{
               id: item.id,
-              name: item.name,
-              monsterImage: item.monsterImage,
-              trashTypes: item.trashTypes,
+              name: item.nickname,
+              monsterImage: item.image_url,
+              trashType: item.trash_category as TrashType,
             }}
           />
         )}

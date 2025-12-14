@@ -13,7 +13,7 @@ type MonsterCard = {
   id: string;
   name: string;
   monsterImage: string;
-  trashTypes: TrashType[];
+  trashType: TrashType;
 };
 
 type Props = {
@@ -21,21 +21,18 @@ type Props = {
 };
 
 export const MonsterCard = ({ monster }: Props) => {
-  const colors = monster.trashTypes.map(
-    (trashType) => TRASH_TYPE_COLORS[trashType]
-  );
-  const firstColor = colors[0];
+  const color = TRASH_TYPE_COLORS[monster.trashType];
   return (
     <Pressable
-      style={[styles.card, { shadowColor: firstColor }]}
+      style={[styles.card, { shadowColor: color }]}
       onPress={() => router.push(`/monsters/${monster.id}`)}
     >
       <Image
         source={{ uri: monster.monsterImage }}
-        style={[styles.image, { borderColor: firstColor }]}
+        style={[styles.image, { borderColor: color }]}
         contentFit="cover"
       />
-      <View style={[styles.nameContainer, { backgroundColor: firstColor }]}>
+      <View style={[styles.nameContainer, { backgroundColor: color }]}>
         <Text style={styles.name} numberOfLines={1}>
           {monster.name}
         </Text>
