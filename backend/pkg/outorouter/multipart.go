@@ -108,6 +108,19 @@ func RegisterMultipartEndpoint[Req RequestObject, Res any](
 			}(),
 		)
 
+		// デバッグログ: ファイルの詳細情報を出力
+		for key, files := range req.MultipartForm.File {
+			for i, fh := range files {
+				slog.Info("multipart file details",
+					"key", key,
+					"index", i,
+					"filename", fh.Filename,
+					"size", fh.Size,
+					"content_type", fh.Header.Get("Content-Type"),
+				)
+			}
+		}
+
 		// リクエスト構造体を作成
 		var request Req
 		reqType := reflect.TypeOf(request)

@@ -12,16 +12,16 @@ type Props = {
 // APIのtrash_categoryをTrashType配列に変換
 function convertTrashCategory(trashCategory: string): TrashType[] {
   const categoryMap: Record<string, TrashType> = {
-    '燃えるゴミ': '燃えるゴミ',
-    '不燃ごみ': '燃えないゴミ',
-    '燃えないゴミ': '燃えないゴミ',
-    'プラスチック': 'プラスチック',
-    '缶': '缶・ビン',
-    '瓶': '缶・ビン',
+    燃えるゴミ: '燃えるゴミ',
+    不燃ごみ: '燃えないゴミ',
+    燃えないゴミ: '燃えないゴミ',
+    プラスチック: 'プラスチック',
+    缶: '缶・ビン',
+    瓶: '缶・ビン',
     '缶・ビン': '缶・ビン',
-    'ペットボトル': 'ペットボトル',
-    '紙類': '紙類',
-    '指定なし': 'その他',
+    ペットボトル: 'ペットボトル',
+    紙類: '紙類',
+    指定なし: 'その他',
   };
   return [categoryMap[trashCategory] || 'その他'];
 }
@@ -40,10 +40,23 @@ function convertToMonster(item: MonsterItem): Monster {
   };
 }
 
-export function MonsterDetailContainer({ monsterId }: Props) {
-  const { data, isLoading, error } = useApi('/monster/v1/GetMonster', {
-    id: monsterId,
-  });
+export function MonsterDetailContainer({ monsterId, isFromRegister }: Props) {
+  const { data, isLoading, error } = useApi(
+    '/monster/v1/GetMonster',
+    { id: monsterId },
+    { enabled: !!monsterId }
+  );
+
+  console.log('MonsterDetail state:', { monsterId, isLoading, hasData: !!data, error: error?.message });
+
+  if (!monsterId) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+        <Text style={styles.errorText}>ID取得中...</Text>
+      </View>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -56,9 +69,7 @@ export function MonsterDetailContainer({ monsterId }: Props) {
   if (error || !data) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>
-          モンスターの読み込みに失敗しました
-        </Text>
+        <Text style={styles.errorText}>モンスターの読み込みに失敗しました</Text>
       </View>
     );
   }

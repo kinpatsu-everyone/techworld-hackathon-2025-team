@@ -49,10 +49,12 @@ export function PhotoPreview({
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>説明</Text>
+          <Text style={styles.inputLabel}>
+            これから生まれるモンスターの名前
+          </Text>
           <TextInput
             style={styles.descriptionInput}
-            placeholder="例：築地松竹ビルの5階"
+            placeholder="例：とらくえ"
             placeholderTextColor="#999"
             value={description}
             onChangeText={onDescriptionChange}

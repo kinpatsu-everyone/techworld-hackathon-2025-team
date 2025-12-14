@@ -1,4 +1,4 @@
-import { useSyncExternalStore, useCallback, useRef } from 'react';
+import { useSyncExternalStore, useCallback, useRef, useEffect } from 'react';
 import { api, EndpointTypes, ApiResponse, ApiError } from '@/lib/client';
 
 // ============================================================================
@@ -13,18 +13,26 @@ type CacheEntry<T> = {
 };
 
 type CacheStore = Map<string, CacheEntry<unknown>>;
-type Listeners = Set<() => void>;
+type Listeners = Map<string, Set<() => void>>;
 
 const cache: CacheStore = new Map();
-const listeners: Listeners = new Set();
+const listeners: Listeners = new Map();
 
-function emitChange() {
-  listeners.forEach((listener) => listener());
+function emitChange(cacheKey: string) {
+  const keyListeners = listeners.get(cacheKey);
+  if (keyListeners) {
+    keyListeners.forEach((listener) => listener());
+  }
 }
 
-function subscribe(listener: () => void) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
+function subscribe(cacheKey: string, listener: () => void) {
+  if (!listeners.has(cacheKey)) {
+    listeners.set(cacheKey, new Set());
+  }
+  listeners.get(cacheKey)!.add(listener);
+  return () => {
+    listeners.get(cacheKey)?.delete(listener);
+  };
 }
 
 function getCacheKey<P extends keyof EndpointTypes>(
@@ -32,14 +40,6 @@ function getCacheKey<P extends keyof EndpointTypes>(
   request: EndpointTypes[P]['request']
 ): string {
   return `${endpoint}:${JSON.stringify(request)}`;
-}
-
-function getSnapshot() {
-  return cache;
-}
-
-function getServerSnapshot() {
-  return cache;
 }
 
 // ============================================================================
@@ -68,36 +68,45 @@ export function useApi<P extends keyof EndpointTypes>(
   const cacheKey = getCacheKey(endpoint, request);
   const enabled = options?.enabled ?? true;
   const fetchingRef = useRef(false);
+  const requestRef = useRef(request);
+  const headersRef = useRef(options?.headers);
+
+  // Update refs on each render
+  requestRef.current = request;
+  headersRef.current = options?.headers;
 
   const fetchData = useCallback(async () => {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
 
+    const currentCacheKey = cacheKey;
+
     // Set loading state
-    cache.set(cacheKey, {
-      data: cache.get(cacheKey)?.data ?? null,
+    cache.set(currentCacheKey, {
+      data: cache.get(currentCacheKey)?.data ?? null,
       error: null,
       isLoading: true,
       timestamp: Date.now(),
     });
-    emitChange();
+    emitChange(currentCacheKey);
 
     try {
       const response: ApiResponse<EndpointTypes[P]['response']> = await api(
         endpoint,
-        request,
-        { headers: options?.headers }
+        requestRef.current,
+        { headers: headersRef.current }
       );
 
-      cache.set(cacheKey, {
+      cache.set(currentCacheKey, {
         data: response.data,
         error: null,
         isLoading: false,
         timestamp: Date.now(),
       });
     } catch (err) {
-      cache.set(cacheKey, {
-        data: cache.get(cacheKey)?.data ?? null,
+      console.error('useApi fetch error:', err);
+      cache.set(currentCacheKey, {
+        data: cache.get(currentCacheKey)?.data ?? null,
         error:
           err instanceof ApiError
             ? err
@@ -107,35 +116,40 @@ export function useApi<P extends keyof EndpointTypes>(
       });
     } finally {
       fetchingRef.current = false;
-      emitChange();
+      emitChange(currentCacheKey);
     }
-  }, [cacheKey, endpoint, request, options?.headers]);
+  }, [cacheKey, endpoint]);
 
-  // Subscribe to cache changes
-  const currentCache = useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getServerSnapshot
+  // Subscribe to cache changes for this specific key
+  const subscribeToKey = useCallback(
+    (listener: () => void) => subscribe(cacheKey, listener),
+    [cacheKey]
   );
 
-  // Initial fetch (only if enabled and no cache entry exists)
-  const entry = currentCache.get(cacheKey) as
-    | CacheEntry<EndpointTypes[P]['response']>
-    | undefined;
+  const getSnapshot = useCallback(
+    () => cache.get(cacheKey) as CacheEntry<EndpointTypes[P]['response']> | undefined,
+    [cacheKey]
+  );
 
-  if (enabled && !entry && !fetchingRef.current) {
-    // Trigger fetch on first render
-    fetchData();
-  }
+  const entry = useSyncExternalStore(subscribeToKey, getSnapshot, getSnapshot);
+
+  // Initial fetch - only when cacheKey changes and no entry exists
+  useEffect(() => {
+    if (enabled && !cache.has(cacheKey)) {
+      fetchData();
+    }
+  }, [enabled, cacheKey, fetchData]);
 
   const mutate = useCallback(async () => {
+    cache.delete(cacheKey);
+    fetchingRef.current = false;
     await fetchData();
-  }, [fetchData]);
+  }, [cacheKey, fetchData]);
 
   return {
     data: entry?.data ?? null,
     error: entry?.error ?? null,
-    isLoading: entry?.isLoading ?? (enabled && !entry),
+    isLoading: entry?.isLoading ?? (enabled && !cache.has(cacheKey)),
     mutate,
   };
 }
@@ -150,10 +164,11 @@ export function mutateApi<P extends keyof EndpointTypes>(
 ): void {
   const cacheKey = getCacheKey(endpoint, request);
   cache.delete(cacheKey);
-  emitChange();
+  emitChange(cacheKey);
 }
 
 export function clearApiCache(): void {
+  const keys = Array.from(cache.keys());
   cache.clear();
-  emitChange();
+  keys.forEach((key) => emitChange(key));
 }
