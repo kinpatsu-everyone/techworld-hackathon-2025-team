@@ -45,15 +45,6 @@ export function MonsterDetailContainer({ monsterId }: Props) {
     id: monsterId,
   });
 
-  const mockMonster = {
-    id: '1',
-    nickname: 'ゴミスター1',
-    trash_category: '燃えるゴミ',
-    image_url: 'https://avatars.githubusercontent.com/u/248258447?s=200&v=4',
-    latitude: 35.681236,
-    longitude: 139.767125,
-  };
-
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -62,20 +53,21 @@ export function MonsterDetailContainer({ monsterId }: Props) {
     );
   }
 
-  //   if (error || !data) {
-  //     return (
-  //       <View style={styles.errorContainer}>
-  //         <Text style={styles.errorText}>
-  //           モンスターの読み込みに失敗しました
-  //         </Text>
-  //       </View>
-  //     );
-  //   }
+  if (error || !data) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>モンスターの読み込みに失敗しました</Text>
+      </View>
+    );
+  }
 
-  const monster = convertToMonster(mockMonster);
+  const monster = convertToMonster(data.monster);
 
   return (
-    <MonsterDetailPresentational monster={monster} isFromRegister={false} />
+    <MonsterDetailPresentational
+      monster={monster}
+      isFromRegister={isFromRegister}
+    />
   );
 }
 
