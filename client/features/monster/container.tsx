@@ -27,7 +27,10 @@ function convertTrashCategory(trashCategory: string): TrashType[] {
 }
 
 // APIのMonsterItemをフロントエンドのMonster型に変換
-function convertToMonster(item: MonsterItem): Monster {
+function convertToMonster(
+  item: MonsterItem,
+  originalImageUrl: string
+): Monster {
   return {
     id: item.id,
     name: item.nickname,
@@ -35,7 +38,7 @@ function convertToMonster(item: MonsterItem): Monster {
     latitude: item.latitude,
     longitude: item.longitude,
     description: '', // APIに対応するフィールドがないため空
-    trashImage: item.image_url, // 現状はmonsterImageと同じ
+    trashImage: originalImageUrl,
     monsterImage: item.image_url,
   };
 }
@@ -47,7 +50,12 @@ export function MonsterDetailContainer({ monsterId, isFromRegister }: Props) {
     { enabled: !!monsterId }
   );
 
-  console.log('MonsterDetail state:', { monsterId, isLoading, hasData: !!data, error: error?.message });
+  console.log('MonsterDetail state:', {
+    monsterId,
+    isLoading,
+    hasData: !!data,
+    error: error?.message,
+  });
 
   if (!monsterId) {
     return (
@@ -74,7 +82,7 @@ export function MonsterDetailContainer({ monsterId, isFromRegister }: Props) {
     );
   }
 
-  const monster = convertToMonster(data.monster);
+  const monster = convertToMonster(data.monster, data.original_image_url);
 
   return (
     <MonsterDetailPresentational
