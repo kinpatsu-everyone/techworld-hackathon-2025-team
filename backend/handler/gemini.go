@@ -342,9 +342,8 @@ func AnalyzeAndGenerateImageMultipart(ctx context.Context, req *AnalyzeAndGenera
 
 	// Step 7: 画像生成用のクライアントを作成
 	generateModel := req.Model
-	if generateModel == "" {
-		generateModel = "gemini-3-pro-image-preview"
-	}
+	generateModel = "gemini-3-pro-image-preview"
+
 	generateClient, err := gemini.NewClient(config.GeminiAPIKey, generateModel)
 	if err != nil {
 		logger.Error(ctx, "failed to create generate client", map[string]any{
@@ -354,11 +353,12 @@ func AnalyzeAndGenerateImageMultipart(ctx context.Context, req *AnalyzeAndGenera
 	}
 
 	// Step 8: 分別種をテーマにした画像生成プロンプトを作成
-	generatePrompt := fmt.Sprintf(GenerateTrashMonsterPromptTemplate, trashType, trashType)
+	generatePrompt := fmt.Sprintf(GenerateTrashMonsterPromptTemplate, trashType)
 
 	logger.Info(ctx, "generating monster image", map[string]any{
 		"model":      generateModel,
 		"trash_type": trashType,
+		"prompt":     generatePrompt,
 	})
 
 	// Step 9: 画像生成を実行
