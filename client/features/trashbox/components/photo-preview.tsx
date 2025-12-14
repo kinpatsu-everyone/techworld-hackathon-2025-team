@@ -9,6 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { MonsterGenerationLoading } from './monster-generation-loading';
 
 type Props = {
   photoUri: string;
@@ -33,6 +34,7 @@ export function PhotoPreview({
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
     >
+      {isLoading && <MonsterGenerationLoading />}
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
