@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Keyboard } from 'react-native';
 import { router } from 'expo-router';
 import { TrashboxPresentational } from './presentational';
 import { useCamera } from './hooks/useCamera';
@@ -31,6 +31,7 @@ export const TrashboxContainer = () => {
       return;
     }
 
+    Keyboard.dismiss();
     setIsSubmitting(true);
 
     try {
