@@ -42,7 +42,7 @@ export const TrashboxContainer = () => {
       });
 
       reset();
-      router.push(`/monsters/${response.data.monsterid}`);
+      router.push(`/monsters/${response.data.monsterid}?fromRegister=true`);
     } catch (error) {
       console.error('モンスター登録エラー:', error);
       Alert.alert(
