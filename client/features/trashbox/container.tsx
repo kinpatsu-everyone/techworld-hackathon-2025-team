@@ -57,6 +57,8 @@ export const TrashboxContainer = () => {
     } finally {
       setIsSubmitting(false);
     }
+    reset();
+    router.replace(`/monsters/${mockMonsterId}?fromRegister=true`);
   };
 
   return (

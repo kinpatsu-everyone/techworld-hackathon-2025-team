@@ -1,7 +1,37 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 
-export type TrashType = 'all' | 'burnable' | 'non-burnable' | 'plastic' | 'cans-bottles' | 'paper' | 'unknown';
+export type TrashType =
+  | 'all'
+  | 'burnable'
+  | 'non-burnable'
+  | 'plastic'
+  | 'cans-bottles'
+  | 'paper'
+  | 'unknown';
+
+// フィルターIDからバックエンドのカテゴリ文字列へのマッピング
+const trashTypeToBackendCategories: Record<TrashType, string[]> = {
+  all: [],
+  burnable: ['燃えるゴミ'],
+  'non-burnable': ['不燃ごみ'],
+  plastic: ['ペットボトル'],
+  'cans-bottles': ['缶・瓶'],
+  paper: ['紙'],
+  unknown: ['不明'],
+};
+
+export function matchesTrashFilter(
+  category: string,
+  selectedFilters: TrashType[]
+): boolean {
+  if (selectedFilters.includes('all')) {
+    return true;
+  }
+  return selectedFilters.some((filter) =>
+    trashTypeToBackendCategories[filter].includes(category)
+  );
+}
 
 interface FilterOption {
   id: TrashType;
@@ -62,7 +92,14 @@ export const FilterMenu: React.FC<FilterMenuProps> = ({
         >
           <View style={[styles.colorDot, { backgroundColor: option.color }]} />
           <Text style={styles.optionLabel}>{option.label}</Text>
-          <Text style={[styles.checkmark, !isSelected(option.id) && styles.checkmarkHidden]}>✓</Text>
+          <Text
+            style={[
+              styles.checkmark,
+              !isSelected(option.id) && styles.checkmarkHidden,
+            ]}
+          >
+            ✓
+          </Text>
         </TouchableOpacity>
       ))}
     </View>

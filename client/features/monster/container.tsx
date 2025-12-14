@@ -6,6 +6,7 @@ import type { Monster, TrashType } from './types';
 
 type Props = {
   monsterId: string;
+  isFromRegister?: boolean;
 };
 
 // APIのtrash_categoryをTrashType配列に変換
@@ -64,7 +65,12 @@ export function MonsterDetailContainer({ monsterId }: Props) {
 
   const monster = convertToMonster(data.monster);
 
-  return <MonsterDetailPresentational monster={monster} />;
+  return (
+    <MonsterDetailPresentational
+      monster={monster}
+      isFromRegister={isFromRegister}
+    />
+  );
 }
 
 const styles = StyleSheet.create({
