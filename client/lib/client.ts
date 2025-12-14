@@ -387,3 +387,120 @@ export const apiCallers = {
   /** Get Monsters */
   GetMonsters: createApiCaller(Endpoints.GetMonsters),
 };
+
+// ============================================================================
+// Multipart API Client (for file uploads)
+// ============================================================================
+
+/**
+ * API client for multipart/form-data requests.
+ * Used for file uploads (e.g., CreateMonster with image).
+ */
+export async function apiMultipart<T>(
+  endpoint: string,
+  formData: FormData,
+  options?: {
+    headers?: Record<string, string>;
+    signal?: AbortSignal;
+  }
+): Promise<ApiResponse<T>> {
+  const config = getApiClientConfig();
+  const url = `${config.baseUrl ?? DEFAULT_BASE_URL}${endpoint}`;
+
+  const fetchOptions: RequestInit = {
+    method: "POST",
+    headers: {
+      ...config.headers,
+      ...options?.headers,
+    },
+    body: formData,
+    signal: options?.signal,
+  };
+
+  const response = await fetch(url, fetchOptions);
+
+  if (!response.ok) {
+    let errorData: ApiErrorResponse | null = null;
+    try {
+      errorData = await response.json();
+    } catch {
+      // Response body is not JSON
+    }
+
+    const apiError = new ApiError(
+      response.status,
+      errorData?.error?.error ?? "UNKNOWN_ERROR",
+      errorData?.error?.message ?? response.statusText,
+      response
+    );
+
+    if (config.onError) {
+      config.onError(apiError);
+    }
+
+    throw apiError;
+  }
+
+  const data = (await response.json()) as T;
+
+  let result: ApiResponse<T> = {
+    data,
+    status: response.status,
+    headers: response.headers,
+  };
+
+  if (config.onResponse) {
+    result = await config.onResponse(result);
+  }
+
+  return result;
+}
+
+// ============================================================================
+// CreateMonster Helper (Multipart)
+// ============================================================================
+
+export interface CreateMonsterParams {
+  nickname: string;
+  latitude: number;
+  longitude: number;
+  imageUri: string;
+}
+
+/**
+ * Creates a new monster by uploading an image and location data.
+ *
+ * @example
+ * ```typescript
+ * const response = await createMonster({
+ *   nickname: "ペットボトルモンスター",
+ *   latitude: 35.6762,
+ *   longitude: 139.6503,
+ *   imageUri: "file:///path/to/photo.jpg",
+ * });
+ * console.log(response.data.monsterid);
+ * ```
+ */
+export async function createMonster(
+  params: CreateMonsterParams,
+  options?: {
+    headers?: Record<string, string>;
+    signal?: AbortSignal;
+  }
+): Promise<ApiResponse<CreateMonsterResponse>> {
+  const formData = new FormData();
+  formData.append("nickname", params.nickname);
+  formData.append("latitude", String(params.latitude));
+  formData.append("longitude", String(params.longitude));
+  formData.append("image", {
+    uri: params.imageUri,
+    type: "image/jpeg",
+    name: "photo.jpg",
+  } as unknown as Blob);
+
+  return apiMultipart<CreateMonsterResponse>(
+    Endpoints.CreateMonster,
+    formData,
+    options
+  );
+}
