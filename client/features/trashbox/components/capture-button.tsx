@@ -29,7 +29,6 @@ export function CaptureButton({
 
 const styles = StyleSheet.create({
   button: {
-    marginTop: 30,
     width: 80,
     height: 80,
     borderRadius: 40,
