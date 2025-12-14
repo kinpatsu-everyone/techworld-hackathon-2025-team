@@ -13,6 +13,21 @@ type Props = {
 };
 
 export const MonsterListPresentational = ({ monsters }: Props) => {
+  const convertTrashCategory = (trashCategory: string): TrashType => {
+    switch (trashCategory) {
+      case '燃えるゴミ':
+        return '燃えるゴミ';
+      case '不燃ごみ':
+        return '燃えないゴミ';
+      case '缶':
+      case '瓶':
+        return '缶・ビン';
+      case 'ペットボトル':
+        return 'ペットボトル';
+      default:
+        return 'その他';
+    }
+  };
   return (
     <View style={styles.container}>
       <FlatList
@@ -26,7 +41,7 @@ export const MonsterListPresentational = ({ monsters }: Props) => {
               id: item.id,
               name: item.nickname,
               monsterImage: item.image_url,
-              trashType: item.trash_category as TrashType,
+              trashType: convertTrashCategory(item.trash_category),
             }}
           />
         )}
