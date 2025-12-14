@@ -10,6 +10,7 @@ type Props = {
   requestPermission: () => void;
   photo: string | null;
   description: string;
+  isSubmitting?: boolean;
   onDescriptionChange: (text: string) => void;
   cameraRef: React.RefObject<CameraView | null>;
   onTakePhoto: () => void;
@@ -22,6 +23,7 @@ export const TrashboxPresentational = ({
   requestPermission,
   photo,
   description,
+  isSubmitting,
   onDescriptionChange,
   cameraRef,
   onTakePhoto,

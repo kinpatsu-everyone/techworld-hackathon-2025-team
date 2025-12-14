@@ -2,10 +2,15 @@ import { StyleSheet, View, Pressable } from 'react-native';
 
 type Props = {
   onPress: () => void;
+  isLoading?: boolean;
   color?: string;
 };
 
-export function CaptureButton({ onPress, color = '#34C759' }: Props) {
+export function CaptureButton({
+  onPress,
+  isLoading = false,
+  color = '#34C759',
+}: Props) {
   return (
     <Pressable
       style={({ pressed }) => [
@@ -13,6 +18,8 @@ export function CaptureButton({ onPress, color = '#34C759' }: Props) {
         { borderColor: color },
         pressed && styles.buttonPressed,
       ]}
+      disabled={isLoading}
+      aria-busy={isLoading}
       onPress={onPress}
     >
       <View style={[styles.inner, { backgroundColor: color }]} />
