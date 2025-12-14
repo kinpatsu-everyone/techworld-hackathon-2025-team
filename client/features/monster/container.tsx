@@ -12,16 +12,16 @@ type Props = {
 // APIのtrash_categoryをTrashType配列に変換
 function convertTrashCategory(trashCategory: string): TrashType[] {
   const categoryMap: Record<string, TrashType> = {
-    '燃えるゴミ': '燃えるゴミ',
-    '不燃ごみ': '燃えないゴミ',
-    '燃えないゴミ': '燃えないゴミ',
-    'プラスチック': 'プラスチック',
-    '缶': '缶・ビン',
-    '瓶': '缶・ビン',
+    燃えるゴミ: '燃えるゴミ',
+    不燃ごみ: '燃えないゴミ',
+    燃えないゴミ: '燃えないゴミ',
+    プラスチック: 'プラスチック',
+    缶: '缶・ビン',
+    瓶: '缶・ビン',
     '缶・ビン': '缶・ビン',
-    'ペットボトル': 'ペットボトル',
-    '紙類': '紙類',
-    '指定なし': 'その他',
+    ペットボトル: 'ペットボトル',
+    紙類: '紙類',
+    指定なし: 'その他',
   };
   return [categoryMap[trashCategory] || 'その他'];
 }
@@ -45,6 +45,15 @@ export function MonsterDetailContainer({ monsterId }: Props) {
     id: monsterId,
   });
 
+  const mockMonster = {
+    id: '1',
+    nickname: 'ゴミスター1',
+    trash_category: '燃えるゴミ',
+    image_url: 'https://avatars.githubusercontent.com/u/248258447?s=200&v=4',
+    latitude: 35.681236,
+    longitude: 139.767125,
+  };
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -53,23 +62,20 @@ export function MonsterDetailContainer({ monsterId }: Props) {
     );
   }
 
-  if (error || !data) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>
-          モンスターの読み込みに失敗しました
-        </Text>
-      </View>
-    );
-  }
+  //   if (error || !data) {
+  //     return (
+  //       <View style={styles.errorContainer}>
+  //         <Text style={styles.errorText}>
+  //           モンスターの読み込みに失敗しました
+  //         </Text>
+  //       </View>
+  //     );
+  //   }
 
-  const monster = convertToMonster(data.monster);
+  const monster = convertToMonster(mockMonster);
 
   return (
-    <MonsterDetailPresentational
-      monster={monster}
-      isFromRegister={isFromRegister}
-    />
+    <MonsterDetailPresentational monster={monster} isFromRegister={false} />
   );
 }
 

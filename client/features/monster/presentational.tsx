@@ -1,23 +1,33 @@
 import { useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, Pressable } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  Alert,
+} from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import * as Linking from 'expo-linking';
+import { Ionicons } from '@expo/vector-icons';
 import type { Monster, TrashType } from './types';
 import { EggHatch } from './components/egg-hatch';
+import { TiltCard } from './components/tilt-card';
 
 type Props = {
   monster: Monster;
   isFromRegister?: boolean;
 };
 
-const TRASH_TYPE_ICONS: Record<TrashType, string> = {
-  燃えるゴミ: '🔥',
-  燃えないゴミ: '🪨',
-  プラスチック: '♻️',
-  '缶・ビン': '🥫',
-  ペットボトル: '🧴',
-  紙類: '📄',
-  その他: '📦',
+const TRASH_TYPE_COLORS: Record<TrashType, string> = {
+  燃えるゴミ: '#FF9500',
+  燃えないゴミ: '#007AFF',
+  プラスチック: '#34C759',
+  '缶・ビン': '#FFCC00',
+  ペットボトル: '#34C759',
+  紙類: '#AF52DE',
+  その他: '#C7C7CC',
 };
 
 export function MonsterDetailPresentational({
@@ -74,16 +84,24 @@ export function MonsterDetailPresentational({
           </Pressable>
         </View>
 
-        {/* 2. 画像 */}
-        <View style={styles.imageContainer}>
-          <Image
-            source={{
-              uri: showMonster ? monster.monsterImage : monster.trashImage,
-            }}
-            style={styles.image}
-            contentFit="cover"
-          />
-        </View>
+        {/* 2. 画像（3D傾きエフェクト） */}
+        <TiltCard>
+          <View style={styles.imageContainer}>
+            <Image
+              source={{
+                uri: showMonster ? monster.monsterImage : monster.trashImage,
+              }}
+              style={styles.image}
+              contentFit="cover"
+            />
+            {/* リボン（登録直後のみ） */}
+            {isFromRegister && (
+              <View style={styles.ribbon}>
+                <Text style={styles.ribbonText}>NEW</Text>
+              </View>
+            )}
+          </View>
+        </TiltCard>
 
         {/* 3. モンスター名 */}
         <Text style={styles.monsterName}>{monster.name}</Text>
@@ -92,9 +110,12 @@ export function MonsterDetailPresentational({
         <View style={styles.trashTypesContainer}>
           {monster.trashTypes.map((type) => (
             <View key={type} style={styles.trashTypeTag}>
-              <Text style={styles.trashTypeIcon}>
-                {TRASH_TYPE_ICONS[type] || '📦'}
-              </Text>
+              <View
+                style={[
+                  styles.trashTypeColorDot,
+                  { backgroundColor: TRASH_TYPE_COLORS[type] || '#C7C7CC' },
+                ]}
+              />
               <Text style={styles.trashTypeText}>{type}</Text>
             </View>
           ))}
@@ -102,8 +123,40 @@ export function MonsterDetailPresentational({
 
         {/* 5. 詳細 */}
         <View style={styles.descriptionContainer}>
-          <Text style={styles.descriptionLabel}>📍 場所の詳細</Text>
-          <Text style={styles.descriptionText}>{monster.description}</Text>
+          <View style={styles.descriptionHeader}>
+            <Text style={styles.descriptionLabel}>📍 場所の詳細</Text>
+            <Pressable
+              style={styles.mapButton}
+              onPress={() => {
+                Alert.alert(
+                  'Google Mapで開く',
+                  'この場所をGoogle Mapで表示しますか？',
+                  [
+                    { text: 'キャンセル', style: 'cancel' },
+                    {
+                      text: '開く',
+                      onPress: () => {
+                        const url = `https://www.google.com/maps?q=${monster.latitude},${monster.longitude}`;
+                        Linking.openURL(url);
+                      },
+                    },
+                  ]
+                );
+              }}
+            >
+              <Ionicons name="map-outline" size={20} color="#007AFF" />
+              <Text style={styles.mapButtonText}>地図で見る</Text>
+            </Pressable>
+          </View>
+          {monster.description ? (
+            <Text style={styles.descriptionText}>{monster.description}</Text>
+          ) : (
+            <Text style={styles.descriptionText}>
+              緯度: {monster.latitude.toFixed(6)}
+              {'\n'}
+              経度: {monster.longitude.toFixed(6)}
+            </Text>
+          )}
         </View>
 
         {/* 6. モンスター一覧画面への動線（登録直後のみ表示） */}
@@ -177,9 +230,30 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  ribbon: {
+    position: 'absolute',
+    top: 15,
+    right: -45,
+    backgroundColor: '#34C759',
+    paddingVertical: 14,
+    paddingHorizontal: 60,
+    transform: [{ rotate: '45deg' }],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  ribbonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    letterSpacing: 2,
+  },
   monsterName: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: '900',
     color: '#333',
     marginBottom: 16,
   },
@@ -194,18 +268,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 20,
-    gap: 6,
+    gap: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  trashTypeIcon: {
-    fontSize: 16,
+  trashTypeColorDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
   },
   trashTypeText: {
     fontSize: 14,
@@ -219,11 +295,32 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginBottom: 24,
   },
+  descriptionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   descriptionLabel: {
     fontSize: 14,
     fontWeight: '600',
     color: '#888',
-    marginBottom: 8,
+  },
+  mapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: '#E8F4FD',
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#007AFF',
+  },
+  mapButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#007AFF',
   },
   descriptionText: {
     fontSize: 16,
