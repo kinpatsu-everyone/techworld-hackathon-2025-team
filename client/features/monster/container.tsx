@@ -1,25 +1,87 @@
+import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
 import { MonsterDetailPresentational } from './presentational';
-import type { Monster } from './types';
+import { useApi } from '@/hooks/use-api';
+import { MonsterItem } from '@/lib/client';
+import type { Monster, TrashType } from './types';
 
 type Props = {
   monsterId: string;
 };
 
-// TODO: 実際のAPI連携時に置き換え
-const MOCK_MONSTER: Monster = {
-  id: '1',
-  name: 'バーニングゴミスター',
-  trashTypes: ['燃えるゴミ', 'プラスチック'],
-  latitude: 35.6762,
-  longitude: 139.6503,
-  description: '築地松竹ビル 5階 エレベーターホール横',
-  trashImage: 'https://picsum.photos/400',
-  monsterImage: 'https://picsum.photos/401',
-};
+// APIのtrash_categoryをTrashType配列に変換
+function convertTrashCategory(trashCategory: string): TrashType[] {
+  const categoryMap: Record<string, TrashType> = {
+    '燃えるゴミ': '燃えるゴミ',
+    '不燃ごみ': '燃えないゴミ',
+    '燃えないゴミ': '燃えないゴミ',
+    'プラスチック': 'プラスチック',
+    '缶': '缶・ビン',
+    '瓶': '缶・ビン',
+    '缶・ビン': '缶・ビン',
+    'ペットボトル': 'ペットボトル',
+    '紙類': '紙類',
+    '指定なし': 'その他',
+  };
+  return [categoryMap[trashCategory] || 'その他'];
+}
+
+// APIのMonsterItemをフロントエンドのMonster型に変換
+function convertToMonster(item: MonsterItem): Monster {
+  return {
+    id: item.id,
+    name: item.nickname,
+    trashTypes: convertTrashCategory(item.trash_category),
+    latitude: item.latitude,
+    longitude: item.longitude,
+    description: '', // APIに対応するフィールドがないため空
+    trashImage: item.image_url, // 現状はmonsterImageと同じ
+    monsterImage: item.image_url,
+  };
+}
 
 export function MonsterDetailContainer({ monsterId }: Props) {
-  // TODO: useQueryなどでAPIからデータ取得
-  const monster = MOCK_MONSTER;
+  const { data, isLoading, error } = useApi('/monster/v1/GetMonster', {
+    id: monsterId,
+  });
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>
+          モンスターの読み込みに失敗しました
+        </Text>
+      </View>
+    );
+  }
+
+  const monster = convertToMonster(data.monster);
 
   return <MonsterDetailPresentational monster={monster} />;
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
+});

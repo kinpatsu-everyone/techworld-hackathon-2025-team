@@ -13,6 +13,7 @@ import { Image } from 'expo-image';
 type Props = {
   photoUri: string;
   description: string;
+  isLoading?: boolean;
   onDescriptionChange: (text: string) => void;
   onRetake: () => void;
   onRegister: () => void;
@@ -21,6 +22,7 @@ type Props = {
 export function PhotoPreview({
   photoUri,
   description,
+  isLoading,
   onDescriptionChange,
   onRetake,
   onRegister,
@@ -66,9 +68,13 @@ export function PhotoPreview({
           </Pressable>
           <Pressable
             style={[styles.button, styles.registerButton]}
+            disabled={isLoading}
+            aria-busy={isLoading}
             onPress={onRegister}
           >
-            <Text style={styles.buttonText}>登録する</Text>
+            <Text style={styles.buttonText}>
+              {isLoading ? 'アップロード中...' : '登録する'}
+            </Text>
           </Pressable>
         </View>
       </ScrollView>
