@@ -238,6 +238,7 @@ func TestLoadEnv_必須環境変数が設定されている場合(t *testing.T) 
 		"MYSQL_HOST":     "localhost",
 		"MYSQL_PORT":     "3306",
 		"PORT":           "8080",
+		"GEMINI_API_KEY": "test-api-key",
 	}
 
 	// 環境変数を設定し、テスト後に元に戻す
@@ -267,7 +268,7 @@ func TestLoadEnv_必須環境変数が不足している場合はパニックす
 	// 環境変数をクリア
 	envVars := []string{
 		"ENV", "MYSQL_USER", "MYSQL_PASSWORD", "MYSQL_DATABASE",
-		"MYSQL_HOST", "MYSQL_PORT", "PORT",
+		"MYSQL_HOST", "MYSQL_PORT", "PORT", "GEMINI_API_KEY",
 	}
 	for _, key := range envVars {
 		os.Unsetenv(key)
