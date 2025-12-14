@@ -78,6 +78,7 @@ main() {
     log_info "Building Docker image..."
     docker build \
         -f Dockerfile.production \
+        --no-cache \
         --build-arg VERSION="${version}" \
         --build-arg COMMIT_SHA="${commit_sha}" \
         --platform linux/amd64 \
@@ -104,18 +105,18 @@ main() {
     log_info "Push complete!"
     echo ""
 
-    # # Deploy to Cloud Run
-    # log_info "Deploying to Cloud Run..."
-    # gcloud run services update "${SERVICE_NAME}" \
-    #     --project="${GCP_PROJECT}" \
-    #     --region="${GCP_REGION}" \
-    #     --image="${full_image}" \
-    #     --quiet
+    # Deploy to Cloud Run
+    log_info "Deploying to Cloud Run..."
+    gcloud run services update "${SERVICE_NAME}" \
+        --project="${GCP_PROJECT}" \
+        --region="${GCP_REGION}" \
+        --image="${full_image}" \
+        --quiet
 
-    # echo ""
-    # log_info "Deploy complete!"
-    # log_info "Image: ${full_image}"
-    # log_info "Service: ${SERVICE_NAME}"
+    echo ""
+    log_info "Deploy complete!"
+    log_info "Image: ${full_image}"
+    log_info "Service: ${SERVICE_NAME}"
 }
 
 # Help

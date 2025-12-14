@@ -77,15 +77,26 @@ func Build(r *outorouter.Router) (http.Handler, error) {
 		MaxMemory:   32 * 1024 * 1024, // 32MB
 	})
 
-	// Monster一覧取得エンドポイント
+	// Monster一覧取得エンドポイント（生成画像）
 	outorouter.RegisterUnaryJSONEndpoint(r, outorouter.UnaryJSONEndpoint[handler.GetMonstersRequest, handler.GetMonstersResponse]{
 		Domain:      "monster",
 		Version:     1,
 		MethodName:  "GetMonsters",
 		Summary:     "Get Monsters",
-		Description: "Returns a list of all monsters with their ID, nickname, latitude, longitude, trash category, and image URL.",
+		Description: "Returns a list of all monsters with their ID, nickname, latitude, longitude, trash category, and generated monster image URL.",
 		Tags:        outorouter.RegisterTags("Monster"),
 		Handler:     handler.GetMonsters,
+	})
+
+	// ゴミ箱一覧取得エンドポイント（元画像）
+	outorouter.RegisterUnaryJSONEndpoint(r, outorouter.UnaryJSONEndpoint[handler.GetTrashsRequest, handler.GetTrashsResponse]{
+		Domain:      "trash",
+		Version:     1,
+		MethodName:  "GetTrashs",
+		Summary:     "Get Trashs",
+		Description: "Returns a list of all trash bins with their ID, nickname, latitude, longitude, trash category, and original trash bin image URL.",
+		Tags:        outorouter.RegisterTags("Trash"),
+		Handler:     handler.GetTrashs,
 	})
 
 	// Monster一件取得エンドポイント
