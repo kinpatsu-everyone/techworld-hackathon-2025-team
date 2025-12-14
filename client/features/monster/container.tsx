@@ -40,10 +40,23 @@ function convertToMonster(item: MonsterItem): Monster {
   };
 }
 
-export function MonsterDetailContainer({ monsterId }: Props) {
-  const { data, isLoading, error } = useApi('/monster/v1/GetMonster', {
-    id: monsterId,
-  });
+export function MonsterDetailContainer({ monsterId, isFromRegister }: Props) {
+  const { data, isLoading, error } = useApi(
+    '/monster/v1/GetMonster',
+    { id: monsterId },
+    { enabled: !!monsterId }
+  );
+
+  console.log('MonsterDetail state:', { monsterId, isLoading, hasData: !!data, error: error?.message });
+
+  if (!monsterId) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+        <Text style={styles.errorText}>ID取得中...</Text>
+      </View>
+    );
+  }
 
   if (isLoading) {
     return (

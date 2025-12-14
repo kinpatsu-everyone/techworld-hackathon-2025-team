@@ -2,10 +2,27 @@ package generator
 
 import (
 	"bytes"
+	"strings"
 	"text/template"
+	"unicode"
 
 	"github.com/kinpatsu-everyone/backend-template/pkg/outorouter/internal/parser"
 )
+
+// toLowerCamel converts PascalCase to camelCase
+func toLowerCamel(s string) string {
+	if s == "" {
+		return s
+	}
+	r := []rune(s)
+	r[0] = unicode.ToLower(r[0])
+	return string(r)
+}
+
+var templateFuncs = template.FuncMap{
+	"toLower":      strings.ToLower,
+	"toLowerCamel": toLowerCamel,
+}
 
 // TypeScriptClientStrategy は Expo/React Native 向けの型安全な API クライアントコードを生成する。
 type TypeScriptClientStrategy struct {
@@ -27,7 +44,12 @@ func (s TypeScriptClientStrategy) Generate(meta *parser.Metadata) (string, error
 
 	// エンドポイントごとにTypeScript用のデータを生成
 	tsEndpoints := make([]tsEndpointData, 0, len(endpoints))
+	hasMultipart := false
 	for _, ep := range endpoints {
+		isMultipart := ep.Kind == parser.KindFileUpload
+		if isMultipart {
+			hasMultipart = true
+		}
 		tsEndpoints = append(tsEndpoints, tsEndpointData{
 			Path:               "/" + ep.Path(),
 			MethodName:         ep.MethodName,
@@ -38,17 +60,19 @@ func (s TypeScriptClientStrategy) Generate(meta *parser.Metadata) (string, error
 			Tags:               tagsToStrings(ep.Tags),
 			RequestTypeFields:  convertFieldsToTS(ep.RequestTypeInfo.Fields),
 			ResponseTypeFields: convertFieldsToTS(ep.ResponseTypeInfo.Fields),
+			IsMultipart:        isMultipart,
 		})
 	}
 
 	data := map[string]any{
-		"BaseURL":     s.BaseURL,
-		"Endpoints":   tsEndpoints,
-		"NestedTypes": nestedTypes,
+		"BaseURL":      s.BaseURL,
+		"Endpoints":    tsEndpoints,
+		"NestedTypes":  nestedTypes,
+		"HasMultipart": hasMultipart,
 	}
 
 	buf := &bytes.Buffer{}
-	tmpl := template.Must(template.New("tsClient").Parse(tsClientTemplate))
+	tmpl := template.Must(template.New("tsClient").Funcs(templateFuncs).Parse(tsClientTemplate))
 	if err := tmpl.Execute(buf, data); err != nil {
 		return "", err
 	}
@@ -65,6 +89,7 @@ type tsEndpointData struct {
 	Tags               []string
 	RequestTypeFields  []tsFieldData
 	ResponseTypeFields []tsFieldData
+	IsMultipart        bool
 }
 
 type tsFieldData struct {
@@ -402,4 +427,123 @@ export const apiCallers = {
   {{ .MethodName }}: createApiCaller(Endpoints.{{ .MethodName }}),
 {{- end }}
 };
+{{- if .HasMultipart }}
+
+// ============================================================================
+// Multipart API Client (for file uploads)
+// ============================================================================
+
+/**
+ * API client for multipart/form-data requests.
+ * Used for file uploads.
+ */
+export async function apiMultipart<T>(
+  endpoint: string,
+  formData: FormData,
+  options?: {
+    headers?: Record<string, string>;
+    signal?: AbortSignal;
+  }
+): Promise<ApiResponse<T>> {
+  const config = getApiClientConfig();
+  const url = ` + "`" + `${config.baseUrl ?? DEFAULT_BASE_URL}${endpoint}` + "`" + `;
+
+  const fetchOptions: RequestInit = {
+    method: "POST",
+    headers: {
+      ...config.headers,
+      ...options?.headers,
+    },
+    body: formData,
+    signal: options?.signal,
+  };
+
+  const response = await fetch(url, fetchOptions);
+
+  if (!response.ok) {
+    let errorData: ApiErrorResponse | null = null;
+    try {
+      errorData = await response.json();
+    } catch {
+      // Response body is not JSON
+    }
+
+    const apiError = new ApiError(
+      response.status,
+      errorData?.error?.error ?? "UNKNOWN_ERROR",
+      errorData?.error?.message ?? response.statusText,
+      response
+    );
+
+    if (config.onError) {
+      config.onError(apiError);
+    }
+
+    throw apiError;
+  }
+
+  const data = (await response.json()) as T;
+
+  let result: ApiResponse<T> = {
+    data,
+    status: response.status,
+    headers: response.headers,
+  };
+
+  if (config.onResponse) {
+    result = await config.onResponse(result);
+  }
+
+  return result;
+}
+
+// ============================================================================
+// Multipart Helper Functions
+// ============================================================================
+{{- range .Endpoints }}
+{{- if .IsMultipart }}
+
+export interface {{ .MethodName }}Params {
+{{- range .RequestTypeFields }}
+{{- if eq .TSType "FileHeader" }}
+  {{ .JSONName }}: string; // File URI (e.g., "file:///path/to/photo.jpg")
+{{- else }}
+  {{ .JSONName }}{{ if .Optional }}?{{ end }}: {{ .TSType }};
+{{- end }}
+{{- end }}
+}
+
+/**
+ * {{ .Summary }}
+ * Uploads files using multipart/form-data.
+ */
+export async function {{ .MethodName | toLowerCamel }}(
+  params: {{ .MethodName }}Params,
+  options?: {
+    headers?: Record<string, string>;
+    signal?: AbortSignal;
+  }
+): Promise<ApiResponse<{{ .ResponseTypeName }}>> {
+  const formData = new FormData();
+{{- range .RequestTypeFields }}
+{{- if eq .TSType "FileHeader" }}
+  formData.append("{{ .JSONName }}", {
+    uri: params.{{ .JSONName }},
+    type: "image/jpeg",
+    name: "photo.jpg",
+  } as unknown as Blob);
+{{- else }}
+  formData.append("{{ .JSONName }}", String(params.{{ .JSONName }}));
+{{- end }}
+{{- end }}
+
+  return apiMultipart<{{ .ResponseTypeName }}>(
+    Endpoints.{{ .MethodName }},
+    formData,
+    options
+  );
+}
+{{- end }}
+{{- end }}
+{{- end }}
 `
