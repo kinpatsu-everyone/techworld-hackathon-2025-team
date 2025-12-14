@@ -11,23 +11,14 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { Ionicons } from '@expo/vector-icons';
-import type { Monster, TrashType } from './types';
+import type { Monster } from './types';
+import { TRASH_TYPE_COLORS } from '@/constants/trash';
 import { EggHatch } from './components/egg-hatch';
 import { TiltCard } from './components/tilt-card';
 
 type Props = {
   monster: Monster;
   isFromRegister?: boolean;
-};
-
-const TRASH_TYPE_COLORS: Record<TrashType, string> = {
-  燃えるゴミ: '#FF9500',
-  燃えないゴミ: '#007AFF',
-  プラスチック: '#34C759',
-  '缶・ビン': '#FFCC00',
-  ペットボトル: '#34C759',
-  紙類: '#AF52DE',
-  その他: '#C7C7CC',
 };
 
 export function MonsterDetailPresentational({
