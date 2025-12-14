@@ -401,7 +401,7 @@
         "request_type": "handler.GetMonstersRequest",
         "response_type": "handler.GetMonstersResponse",
         "summary": "Get Monsters",
-        "description": "Returns a list of all monsters with their ID, nickname, latitude, longitude, trash category, and image URL.",
+        "description": "Returns a list of all monsters with their ID, nickname, latitude, longitude, trash category, and generated monster image URL.",
         "tags": [
           "Monster"
         ],
@@ -564,6 +564,87 @@
               "type": "string",
               "ts_type": "string",
               "optional": false
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "trash": {
+    "1": [
+      {
+        "kind": "JSON",
+        "domain": "trash",
+        "version": 1,
+        "method_name": "GetTrashs",
+        "http_method": "POST",
+        "request_type": "handler.GetTrashsRequest",
+        "response_type": "handler.GetTrashsResponse",
+        "summary": "Get Trashs",
+        "description": "Returns a list of all trash bins with their ID, nickname, latitude, longitude, trash category, and original trash bin image URL.",
+        "tags": [
+          "Trash"
+        ],
+        "request_type_info": {
+          "name": "GetTrashsRequest",
+          "fields": []
+        },
+        "response_type_info": {
+          "name": "GetTrashsResponse",
+          "fields": [
+            {
+              "name": "Trashs",
+              "json_name": "trashs",
+              "type": "[]handler.TrashItem",
+              "ts_type": "TrashItem[]",
+              "optional": false,
+              "nested_type": {
+                "name": "TrashItem",
+                "fields": [
+                  {
+                    "name": "ID",
+                    "json_name": "id",
+                    "type": "string",
+                    "ts_type": "string",
+                    "optional": false
+                  },
+                  {
+                    "name": "Nickname",
+                    "json_name": "nickname",
+                    "type": "string",
+                    "ts_type": "string",
+                    "optional": false
+                  },
+                  {
+                    "name": "Latitude",
+                    "json_name": "latitude",
+                    "type": "float64",
+                    "ts_type": "number",
+                    "optional": false
+                  },
+                  {
+                    "name": "Longitude",
+                    "json_name": "longitude",
+                    "type": "float64",
+                    "ts_type": "number",
+                    "optional": false
+                  },
+                  {
+                    "name": "TrashCategory",
+                    "json_name": "trash_category",
+                    "type": "string",
+                    "ts_type": "string",
+                    "optional": false
+                  },
+                  {
+                    "name": "ImageURL",
+                    "json_name": "image_url",
+                    "type": "string",
+                    "ts_type": "string",
+                    "optional": false
+                  }
+                ]
+              }
             }
           ]
         }

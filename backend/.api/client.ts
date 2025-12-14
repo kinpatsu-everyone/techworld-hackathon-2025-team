@@ -5,7 +5,7 @@
 // Configuration
 // ============================================================================
 
-const DEFAULT_BASE_URL = "https://backend-api-713089770976.asia-northeast1.run.app";
+const DEFAULT_BASE_URL = "http://localhost:8080";
 
 export interface ApiClientConfig {
   baseUrl?: string;

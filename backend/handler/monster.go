@@ -294,44 +294,216 @@ type GetMonstersResponse struct {
 // GetMonsters はMonster一覧取得ハンドラーです
 // 処理内容:
 // 1. データベースからMonster一覧を取得
-// 2. 各Monsterの画像URLを生成 (https://images.kinpatsu.fanlav.net/monsters/{uuid}/model.png)
+// 2. 各Monsterの画像URLを生成（署名付きURL）
 // 3. 各Monsterの分類種別を取得
 // 4. レスポンスとして配列を返す
 func GetMonsters(ctx context.Context, _ *GetMonstersRequest) (*GetMonstersResponse, error) {
-	// TODO: 実装予定
-	// 1. データベースからMonster一覧を取得
-	// 2. 各Monsterの画像URLを生成 (https://images.kinpatsu.fanlav.net/monsters/{uuid}/model.png)
-	// 3. 各Monsterの分類種別を取得（Monstertrashcategoryテーブルから）
-	// 4. レスポンスとして配列を返す
+	logger := outologger.GetLogger()
+	queries := mysql.GetQueries()
 
-	// 現在はmockデータを返す
+	// 1. データベースからMonster一覧を取得
+	monsters, err := queries.ListMonsters(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list monsters: %w", err)
+	}
+
+	// GCSクライアントを作成（署名付きURL生成用）
+	var gcsClient *gcs.Client
+	if config.GCSBucketName != "" {
+		var credentialsJSON []byte
+		if config.GCSCredentialsJSON != "" {
+			credentialsJSON = []byte(config.GCSCredentialsJSON)
+		}
+
+		gcsClient, err = gcs.NewClient(ctx, config.GCSBucketName, config.GCSBaseURL, credentialsJSON)
+		if err != nil {
+			logger.Error(ctx, "failed to create GCS client", map[string]any{
+				"error": err,
+			})
+			// GCSクライアントの作成に失敗しても処理は続行
+		} else {
+			defer gcsClient.Close()
+		}
+	}
+
+	// レスポンス用のMonsterItem配列を作成
+	monsterItems := make([]MonsterItem, 0, len(monsters))
+
+	for _, monster := range monsters {
+
+		// 3. 各Monsterの分類種別を取得（Monstertrashcategoryテーブルから）
+		trashCategories, err := queries.ListMonsterTrashCategories(ctx, monster.Monsterid)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list monster trash categories for monster %s: %w", monster.Monsterid, err)
+		}
+
+		// 最初のTrashCategoryを使用（なければ空文字列）
+		trashCategoryStr := ""
+		if len(trashCategories) > 0 {
+			trashCategoryStr = mysql.TrashCategoryToString(trashCategories[0].Trashcategory)
+		}
+
+		// LatitudeとLongitudeの処理（sql.NullStringから数値へ）
+		var latitude float64
+		if monster.Latitude.Valid {
+			if lat, err := strconv.ParseFloat(monster.Latitude.String, 64); err == nil {
+				latitude = lat
+			}
+		}
+		var longitude float64
+		if monster.Longitude.Valid {
+			if lon, err := strconv.ParseFloat(monster.Longitude.String, 64); err == nil {
+				longitude = lon
+			}
+		}
+
+		// 生成画像の署名付きURLを生成
+		var imageURL string
+		if gcsClient != nil && monster.Generatedmonsterimageurl != "" {
+			signedURL, err := gcsClient.GetSignedURL(ctx, monster.Generatedmonsterimageurl, 24*time.Hour)
+			if err != nil {
+				logger.Error(ctx, "failed to generate signed URL", map[string]any{
+					"error":      err,
+					"monster_id": monster.Monsterid,
+					"path":       monster.Generatedmonsterimageurl,
+				})
+				imageURL = "" // エラー時は空文字列
+			} else {
+				imageURL = signedURL
+			}
+		}
+
+		monsterItems = append(monsterItems, MonsterItem{
+			ID:            monster.Monsterid,
+			Nickname:      monster.Nickname,
+			Latitude:      latitude,
+			Longitude:     longitude,
+			TrashCategory: trashCategoryStr,
+			ImageURL:      imageURL,
+		})
+	}
+
+	// 4. レスポンスとして配列を返す
 	return &GetMonstersResponse{
-		Monsters: []MonsterItem{
-			{
-				ID:            "00000000-0000-0000-0000-000000000001",
-				Nickname:      "燃えるゴミモンスター",
-				Latitude:      35.6812,
-				Longitude:     139.7671,
-				TrashCategory: mysql.TrashCategoryToString(1), // 燃えるゴミ
-				ImageURL:      "https://images.kinpatsu.fanlav.net/monsters/00000000-0000-0000-0000-000000000001/model.png",
-			},
-			{
-				ID:            "00000000-0000-0000-0000-000000000002",
-				Nickname:      "缶モンスター",
-				Latitude:      35.6823,
-				Longitude:     139.7682,
-				TrashCategory: mysql.TrashCategoryToString(3), // 缶
-				ImageURL:      "https://images.kinpatsu.fanlav.net/monsters/00000000-0000-0000-0000-000000000002/model.png",
-			},
-			{
-				ID:            "00000000-0000-0000-0000-000000000003",
-				Nickname:      "ペットボトルモンスター",
-				Latitude:      0,
-				Longitude:     0,
-				TrashCategory: mysql.TrashCategoryToString(5), // ペットボトル
-				ImageURL:      "https://images.kinpatsu.fanlav.net/monsters/00000000-0000-0000-0000-000000000003/model.png",
-			},
-		},
+		Monsters: monsterItems,
+	}, nil
+}
+
+// GetTrashsRequest はゴミ箱一覧取得リクエストです
+type GetTrashsRequest struct{}
+
+// Validate はリクエストのバリデーションを行います
+func (r GetTrashsRequest) Validate() error {
+	return nil
+}
+
+// TrashItem はゴミ箱一覧の各アイテムです
+type TrashItem struct {
+	ID            string  `json:"id"`             // モンスターID(UUID)
+	Nickname      string  `json:"nickname"`       // ニックネーム
+	Latitude      float64 `json:"latitude"`       // 緯度(-90.0 ~ 90.0, nullable)
+	Longitude     float64 `json:"longitude"`      // 経度(-180.0 ~ 180.0, nullable)
+	TrashCategory string  `json:"trash_category"` // ゴミ種別
+	ImageURL      string  `json:"image_url"`      // 元のゴミ箱画像の署名付きURL
+}
+
+// GetTrashsResponse はゴミ箱一覧取得レスポンスです
+type GetTrashsResponse struct {
+	Trashs []TrashItem `json:"trashs"` // ゴミ箱の配列
+}
+
+// GetTrashs はゴミ箱一覧取得ハンドラーです
+// 処理内容:
+// 1. データベースからMonster一覧を取得
+// 2. 各Monsterの元画像（ゴミ箱画像）の署名付きURLを生成
+// 3. 各Monsterの分類種別を取得
+// 4. レスポンスとして配列を返す
+func GetTrashs(ctx context.Context, _ *GetTrashsRequest) (*GetTrashsResponse, error) {
+	logger := outologger.GetLogger()
+	queries := mysql.GetQueries()
+
+	// 1. データベースからMonster一覧を取得
+	monsters, err := queries.ListMonsters(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list monsters: %w", err)
+	}
+
+	// GCSクライアントを作成（署名付きURL生成用）
+	var gcsClient *gcs.Client
+	if config.GCSBucketName != "" {
+		var credentialsJSON []byte
+		if config.GCSCredentialsJSON != "" {
+			credentialsJSON = []byte(config.GCSCredentialsJSON)
+		}
+
+		gcsClient, err = gcs.NewClient(ctx, config.GCSBucketName, config.GCSBaseURL, credentialsJSON)
+		if err != nil {
+			logger.Error(ctx, "failed to create GCS client", map[string]any{
+				"error": err,
+			})
+		} else {
+			defer gcsClient.Close()
+		}
+	}
+
+	// レスポンス用のTrashItem配列を作成
+	trashItems := make([]TrashItem, 0, len(monsters))
+
+	for _, monster := range monsters {
+		// 各Monsterの分類種別を取得（Monstertrashcategoryテーブルから）
+		trashCategories, err := queries.ListMonsterTrashCategories(ctx, monster.Monsterid)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list monster trash categories for monster %s: %w", monster.Monsterid, err)
+		}
+
+		// 最初のTrashCategoryを使用（なければ空文字列）
+		trashCategoryStr := ""
+		if len(trashCategories) > 0 {
+			trashCategoryStr = mysql.TrashCategoryToString(trashCategories[0].Trashcategory)
+		}
+
+		// LatitudeとLongitudeの処理（sql.NullStringから数値へ）
+		var latitude float64
+		if monster.Latitude.Valid {
+			if lat, err := strconv.ParseFloat(monster.Latitude.String, 64); err == nil {
+				latitude = lat
+			}
+		}
+		var longitude float64
+		if monster.Longitude.Valid {
+			if lon, err := strconv.ParseFloat(monster.Longitude.String, 64); err == nil {
+				longitude = lon
+			}
+		}
+
+		// 元画像（ゴミ箱画像）の署名付きURLを生成
+		var imageURL string
+		if gcsClient != nil && monster.Originaltrashbinimageurl != "" {
+			signedURL, err := gcsClient.GetSignedURL(ctx, monster.Originaltrashbinimageurl, 24*time.Hour)
+			if err != nil {
+				logger.Error(ctx, "failed to generate signed URL for original image", map[string]any{
+					"error":      err,
+					"monster_id": monster.Monsterid,
+					"path":       monster.Originaltrashbinimageurl,
+				})
+				imageURL = ""
+			} else {
+				imageURL = signedURL
+			}
+		}
+
+		trashItems = append(trashItems, TrashItem{
+			ID:            monster.Monsterid,
+			Nickname:      monster.Nickname,
+			Latitude:      latitude,
+			Longitude:     longitude,
+			TrashCategory: trashCategoryStr,
+			ImageURL:      imageURL,
+		})
+	}
+
+	return &GetTrashsResponse{
+		Trashs: trashItems,
 	}, nil
 }
 

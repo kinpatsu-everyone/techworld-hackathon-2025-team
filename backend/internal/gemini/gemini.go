@@ -29,17 +29,11 @@ const AnalyzeTrashBinPrompt = `この画像に写っているゴミ箱を分析�
 
 // GenerateTrashMonsterPromptTemplate は分別種をテーマにしたモンスターキャラクター生成用のプロンプトテンプレートです
 // プレースホルダー: %s = trashType (2箇所)
-const GenerateTrashMonsterPromptTemplate = `ゴミ箱画像を元にしたモンスターキャラクターを生成してください。
-
-テーマ: %s
-
-このモンスターは、%sをテーマにした動物モチーフのキャラクターです。
-ゴミ箱の特徴（色、マーク、形状など）を反映させつつ、かわいらしく親しみやすいデザインにしてください。
-キャラクターは正面を向いており、全身がはっきりと見えるように描いてください。
-背景はシンプルで、キャラクターが際立つようにしてください。
-
-スタイル: カラフルでポップなイラストスタイル、アニメーション風
-解像度: 高解像度（1024x1024以上推奨）`
+const GenerateTrashMonsterPromptTemplate = `この写真のゴミ箱について、景観や背景はそのままにリアルなモンスターに生まれ変わらせてください。
+以下の条件を守ってください：
+・日本文化をモチーフにした動物や妖怪・幻獣など
+・分別種「%s」をテーマにしたデザイン
+`
 
 // TrashAnalysisResult は画像分析結果のJSON構造です
 type TrashAnalysisResult struct {
@@ -187,7 +181,7 @@ func (c *Client) AnalyzeTrashBinImage(ctx context.Context, imageData []byte, mim
 // 戻り値: 生成された画像データ（バイナリ）、MIMEタイプ
 func (c *Client) GenerateMonsterImage(ctx context.Context, trashType string) (imageData []byte, mimeType string, err error) {
 	// 分別種をテーマにした画像生成プロンプトを作成
-	generatePrompt := fmt.Sprintf(GenerateTrashMonsterPromptTemplate, trashType, trashType)
+	generatePrompt := fmt.Sprintf(GenerateTrashMonsterPromptTemplate, trashType)
 
 	// 画像生成を実行
 	generateResp, err := c.GenerateContent(ctx, generatePrompt)
