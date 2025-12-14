@@ -311,88 +311,6 @@
   "monster": {
     "1": [
       {
-        "kind": "FileUpload",
-        "domain": "monster",
-        "version": 1,
-        "method_name": "CreateMonster",
-        "http_method": "POST",
-        "request_type": "handler.CreateMonsterRequest",
-        "response_type": "handler.CreateMonsterResponse",
-        "summary": "Create Monster",
-        "description": "Creates a new monster by analyzing a trash bin image, generating a monster character, and persisting the monster data. Returns the monster ID.",
-        "tags": [
-          "Monster",
-          "AI",
-          "Image"
-        ],
-        "request_type_info": {
-          "name": "CreateMonsterRequest",
-          "fields": [
-            {
-              "name": "Nickname",
-              "json_name": "nickname",
-              "type": "string",
-              "ts_type": "string",
-              "optional": false
-            },
-            {
-              "name": "Latitude",
-              "json_name": "latitude",
-              "type": "float64",
-              "ts_type": "number",
-              "optional": false
-            },
-            {
-              "name": "Longitude",
-              "json_name": "longitude",
-              "type": "float64",
-              "ts_type": "number",
-              "optional": false
-            },
-            {
-              "name": "Image",
-              "json_name": "image",
-              "type": "*multipart.FileHeader",
-              "ts_type": "FileHeader",
-              "optional": false
-            }
-          ]
-        },
-        "response_type_info": {
-          "name": "CreateMonsterResponse",
-          "fields": [
-            {
-              "name": "MonsterID",
-              "json_name": "monsterid",
-              "type": "string",
-              "ts_type": "string",
-              "optional": false
-            },
-            {
-              "name": "TrashType",
-              "json_name": "trash_type",
-              "type": "string",
-              "ts_type": "string",
-              "optional": false
-            },
-            {
-              "name": "GeneratedImageURL",
-              "json_name": "generated_image_url",
-              "type": "string",
-              "ts_type": "string",
-              "optional": false
-            },
-            {
-              "name": "OriginalImageURL",
-              "json_name": "original_image_url",
-              "type": "string",
-              "ts_type": "string",
-              "optional": false
-            }
-          ]
-        }
-      },
-      {
         "kind": "JSON",
         "domain": "monster",
         "version": 1,
@@ -561,6 +479,88 @@
             {
               "name": "GeneratedImageURL",
               "json_name": "generated_image_url",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            }
+          ]
+        }
+      },
+      {
+        "kind": "FileUpload",
+        "domain": "monster",
+        "version": 1,
+        "method_name": "CreateMonster",
+        "http_method": "POST",
+        "request_type": "handler.CreateMonsterRequest",
+        "response_type": "handler.CreateMonsterResponse",
+        "summary": "Create Monster",
+        "description": "Creates a new monster by analyzing a trash bin image, generating a monster character, and persisting the monster data. Returns the monster ID.",
+        "tags": [
+          "Monster",
+          "AI",
+          "Image"
+        ],
+        "request_type_info": {
+          "name": "CreateMonsterRequest",
+          "fields": [
+            {
+              "name": "Nickname",
+              "json_name": "nickname",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            },
+            {
+              "name": "Latitude",
+              "json_name": "latitude",
+              "type": "float64",
+              "ts_type": "number",
+              "optional": false
+            },
+            {
+              "name": "Longitude",
+              "json_name": "longitude",
+              "type": "float64",
+              "ts_type": "number",
+              "optional": false
+            },
+            {
+              "name": "Image",
+              "json_name": "image",
+              "type": "*multipart.FileHeader",
+              "ts_type": "FileHeader",
+              "optional": false
+            }
+          ]
+        },
+        "response_type_info": {
+          "name": "CreateMonsterResponse",
+          "fields": [
+            {
+              "name": "MonsterID",
+              "json_name": "monsterid",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            },
+            {
+              "name": "TrashType",
+              "json_name": "trash_type",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            },
+            {
+              "name": "GeneratedImageURL",
+              "json_name": "generated_image_url",
+              "type": "string",
+              "ts_type": "string",
+              "optional": false
+            },
+            {
+              "name": "OriginalImageURL",
+              "json_name": "original_image_url",
               "type": "string",
               "ts_type": "string",
               "optional": false

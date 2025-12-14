@@ -4,11 +4,11 @@ import { Image } from 'expo-image';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import * as Linking from 'expo-linking';
 import { Ionicons } from '@expo/vector-icons';
-import { MonsterItem } from '@/lib/client';
+import { MonsterItem, TrashItem } from '@/lib/client';
 
 interface TrashModalProps {
   visible: boolean;
-  trashBin: MonsterItem | null;
+  trashBin: TrashItem | null;
   onClose: () => void;
 }
 
