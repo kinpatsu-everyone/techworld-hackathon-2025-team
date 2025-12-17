@@ -1,27 +1,60 @@
 import useSWR, { SWRConfiguration, mutate as swrMutate } from 'swr';
-import {
-  api,
-  EndpointTypes,
-  ApiError,
-  Endpoints,
-} from '@/lib/client';
+import useSWRMutation, { SWRMutationConfiguration } from 'swr/mutation';
+import { api, EndpointTypes, ApiError, Endpoints } from '@/lib/client';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export type SWRApiState<T> = {
-  data: T | null;
+/** useApi の戻り値の型 */
+export type UseApiResult<P extends keyof EndpointTypes> = {
+  data: EndpointTypes[P]['response'] | null;
   error: ApiError | null;
   isLoading: boolean;
   isValidating: boolean;
-  mutate: () => Promise<T | undefined>;
+  mutate: () => Promise<EndpointTypes[P]['response'] | undefined>;
 };
 
-export type UseSWRApiOptions<P extends keyof EndpointTypes> = {
+/** useApi のオプション型 */
+export type UseApiOptions<P extends keyof EndpointTypes> = {
   headers?: Record<string, string>;
   enabled?: boolean;
 } & Omit<SWRConfiguration<EndpointTypes[P]['response'], ApiError>, 'fetcher'>;
+
+/** Trigger関数の型 */
+export type TriggerFunction<P extends keyof EndpointTypes> = (
+  request: EndpointTypes[P]['request'],
+  options?: {
+    throwOnError?: boolean;
+    revalidate?: boolean;
+    populateCache?: boolean;
+    optimisticData?: EndpointTypes[P]['response'];
+    rollbackOnError?: boolean;
+  }
+) => Promise<EndpointTypes[P]['response'] | undefined>;
+
+/** useApiMutation の戻り値の型 */
+export type UseApiMutationResult<P extends keyof EndpointTypes> = {
+  /** リクエストを実行する関数 (型安全) */
+  trigger: TriggerFunction<P>;
+  data: EndpointTypes[P]['response'] | undefined;
+  error: ApiError | undefined;
+  isMutating: boolean;
+  reset: () => void;
+};
+
+/** useApiMutation のオプション型 */
+export type UseApiMutationOptions<P extends keyof EndpointTypes> = {
+  headers?: Record<string, string>;
+} & Omit<
+  SWRMutationConfiguration<
+    EndpointTypes[P]['response'],
+    ApiError,
+    string,
+    EndpointTypes[P]['request']
+  >,
+  'fetcher'
+>;
 
 // ============================================================================
 // Helper Functions
@@ -35,24 +68,39 @@ function getCacheKey<P extends keyof EndpointTypes>(
 }
 
 // ============================================================================
-// Generic useApi Hook with SWR
+// useApi - データ取得用 Hook
 // ============================================================================
 
 /**
- * Type-safe SWR hook for API calls.
- * The request and response types are automatically inferred from the endpoint path.
+ * 型安全なデータ取得用SWR Hook
+ *
+ * @param endpoint - APIエンドポイント (Endpoints.XXX)
+ * @param request - リクエストボディ (エンドポイントに応じて型が決定)
+ * @param options - SWRオプション (任意)
  *
  * @example
  * ```typescript
- * const { data, error, isLoading } = useApi(Endpoints.GetMonsters, {});
- * // data is typed as GetMonstersResponse | null
+ * // モンスター一覧を取得
+ * const { data, isLoading } = useApi(Endpoints.GetMonsters, {});
+ *
+ * // 特定のモンスターを取得
+ * const { data } = useApi(Endpoints.GetMonster, { id: 'monster-123' });
+ *
+ * // オプション付き
+ * const { data } = useApi(Endpoints.GetMonsters, {}, {
+ *   refreshInterval: 5000,
+ *   revalidateOnFocus: true,
+ * });
+ *
+ * // 条件付きfetch
+ * const { data } = useApi(Endpoints.GetMonster, { id }, { enabled: !!id });
  * ```
  */
 export function useApi<P extends keyof EndpointTypes>(
   endpoint: P,
   request: EndpointTypes[P]['request'],
-  options?: UseSWRApiOptions<P>
-): SWRApiState<EndpointTypes[P]['response']> {
+  options?: UseApiOptions<P>
+): UseApiResult<P> {
   const { headers, enabled = true, ...swrOptions } = options ?? {};
   const cacheKey = enabled ? getCacheKey(endpoint, request) : null;
 
@@ -76,70 +124,103 @@ export function useApi<P extends keyof EndpointTypes>(
 }
 
 // ============================================================================
-// Pre-built Endpoint Hooks
+// useApiMutation - データ変更用 Hook
 // ============================================================================
 
 /**
- * Fetch health status
+ * 型安全なデータ変更用SWR Mutation Hook
+ *
+ * @param endpoint - APIエンドポイント (Endpoints.XXX)
+ * @param options - SWR Mutationオプション (任意)
+ *
  * @example
  * ```typescript
- * const { data, isLoading } = useHealthz();
+ * // 画像解析のmutation
+ * const { trigger, isMutating } = useApiMutation(Endpoints.AnalyzeImage);
+ *
+ * // triggerはリクエストの型が決まっている
+ * const result = await trigger({
+ *   image_data: 'base64...',
+ *   mime_type: 'image/jpeg',
+ * });
+ *
+ * // オプション付き
+ * const { trigger } = useApiMutation(Endpoints.GenerateImage, {
+ *   onSuccess: (data) => console.log('Generated:', data),
+ *   onError: (error) => console.error('Failed:', error),
+ * });
  * ```
  */
-export function useHealthz(options?: Omit<UseSWRApiOptions<'/healthz/v1/Healthz'>, 'headers'>) {
-  return useApi(Endpoints.Healthz, {}, options);
+export function useApiMutation<P extends keyof EndpointTypes>(
+  endpoint: P,
+  options?: UseApiMutationOptions<P>
+): UseApiMutationResult<P> {
+  const { headers, ...swrOptions } = options ?? {};
+
+  const fetcher = async (
+    _key: string,
+    { arg }: { arg: EndpointTypes[P]['request'] }
+  ): Promise<EndpointTypes[P]['response']> => {
+    const response = await api(endpoint, arg, { headers });
+    return response.data;
+  };
+
+  const { trigger, data, error, isMutating, reset } = useSWRMutation<
+    EndpointTypes[P]['response'],
+    ApiError,
+    string,
+    EndpointTypes[P]['request']
+  >(endpoint, fetcher, swrOptions);
+
+  return {
+    // triggerをTriggerFunction型にキャスト（SWRの複雑な型を簡略化）
+    trigger: trigger as unknown as TriggerFunction<P>,
+    data,
+    error,
+    isMutating,
+    reset,
+  };
 }
 
-/**
- * Fetch all monsters
- * @example
- * ```typescript
- * const { data, isLoading, error } = useMonsters();
- * const monsters = data?.monsters ?? [];
- * ```
- */
-export function useMonsters(options?: UseSWRApiOptions<'/monster/v1/GetMonsters'>) {
+// ============================================================================
+// Pre-built Hooks (便利なショートカット)
+// ============================================================================
+
+/** モンスター一覧を取得 */
+export function useMonsters(options?: UseApiOptions<'/monster/v1/GetMonsters'>) {
   return useApi(Endpoints.GetMonsters, {}, options);
 }
 
-/**
- * Fetch a single monster by ID
- * @example
- * ```typescript
- * const { data, isLoading } = useMonster({ id: 'monster-123' });
- * ```
- */
+/** 特定のモンスターを取得 */
 export function useMonster(
   request: EndpointTypes['/monster/v1/GetMonster']['request'],
-  options?: UseSWRApiOptions<'/monster/v1/GetMonster'>
+  options?: UseApiOptions<'/monster/v1/GetMonster'>
 ) {
   return useApi(Endpoints.GetMonster, request, options);
 }
 
-/**
- * Fetch all trash items
- * @example
- * ```typescript
- * const { data, isLoading } = useTrashs();
- * const trashs = data?.trashs ?? [];
- * ```
- */
-export function useTrashs(options?: UseSWRApiOptions<'/trash/v1/GetTrashs'>) {
+/** トラッシュ一覧を取得 */
+export function useTrashs(options?: UseApiOptions<'/trash/v1/GetTrashs'>) {
   return useApi(Endpoints.GetTrashs, {}, options);
 }
 
+/** ヘルスチェック */
+export function useHealthz(options?: UseApiOptions<'/healthz/v1/Healthz'>) {
+  return useApi(Endpoints.Healthz, {}, options);
+}
+
 // ============================================================================
-// Global Mutate Functions
+// Global Cache Functions
 // ============================================================================
 
 /**
- * Mutate (revalidate) a specific API cache
+ * 特定のAPIキャッシュを再検証
  * @example
  * ```typescript
- * await mutateApi(Endpoints.GetMonsters, {});
+ * await revalidateApi(Endpoints.GetMonsters, {});
  * ```
  */
-export async function mutateApi<P extends keyof EndpointTypes>(
+export async function revalidateApi<P extends keyof EndpointTypes>(
   endpoint: P,
   request: EndpointTypes[P]['request']
 ): Promise<void> {
@@ -147,40 +228,23 @@ export async function mutateApi<P extends keyof EndpointTypes>(
   await swrMutate(cacheKey);
 }
 
-/**
- * Mutate all monsters cache
- */
-export async function mutateMonsters(): Promise<void> {
-  await mutateApi(Endpoints.GetMonsters, {});
-}
+/** モンスター一覧キャッシュを再検証 */
+export const revalidateMonsters = () => revalidateApi(Endpoints.GetMonsters, {});
 
-/**
- * Mutate a specific monster cache
- */
-export async function mutateMonster(id: string): Promise<void> {
-  await mutateApi(Endpoints.GetMonster, { id });
-}
+/** 特定モンスターのキャッシュを再検証 */
+export const revalidateMonster = (id: string) =>
+  revalidateApi(Endpoints.GetMonster, { id });
 
-/**
- * Mutate all trashs cache
- */
-export async function mutateTrashs(): Promise<void> {
-  await mutateApi(Endpoints.GetTrashs, {});
-}
+/** トラッシュ一覧キャッシュを再検証 */
+export const revalidateTrashs = () => revalidateApi(Endpoints.GetTrashs, {});
 
-/**
- * Clear all SWR cache
- * @example
- * ```typescript
- * clearSWRCache();
- * ```
- */
-export function clearSWRCache(): void {
+/** 全SWRキャッシュをクリア */
+export function clearAllCache(): void {
   swrMutate(() => true, undefined, { revalidate: false });
 }
 
 // ============================================================================
-// Re-export useful types
+// Re-exports
 // ============================================================================
 
 export type { EndpointTypes, ApiError } from '@/lib/client';
